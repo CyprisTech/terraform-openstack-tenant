@@ -14,5 +14,5 @@ resource "openstack_compute_flavor_v2" "flavors" {
 
 data "openstack_compute_flavor_v2" "flavors" {
   for_each = { for flv in var.data.flavors : flv => {} }
-  name  = each.value.name
+  name  = each.key
 }

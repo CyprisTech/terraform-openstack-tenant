@@ -168,7 +168,10 @@ resource "openstack_networking_floatingip_v2" "instance_floating_ip" {
     ]): "${item.instance_name}-${item.pool_name}" => item
   }
   pool       = each.value.pool_name
-  subnet_ids = [ openstack_networking_subnet_v2.subnets["${each.value.pool_name}-${each.value.subnet_name}"].id ]
+  subnet_ids = [ try(
+                     openstack_networking_subnet_v2.subnets["${each.value.pool_name}-${each.value.subnet_name}"].id,
+                     data.openstack_networking_subnet_v2.subnet["${each.value.pool_name}-${each.value.subnet_name}"].id
+                 )]
 }
 
 resource "openstack_networking_floatingip_associate_v2" "instance_fip_association" {

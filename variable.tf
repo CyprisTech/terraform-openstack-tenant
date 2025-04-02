@@ -22,6 +22,7 @@ variable "region" {
 variable "ssh_user" {
   description = "Tenant admin user for VM instances"
   type        = string
+  default = ""
 }
 
 variable "projects" {
@@ -31,6 +32,7 @@ variable "projects" {
     description = string
     enabled     = bool
   }))
+  default = []
 }
 
 variable "compute_aggregates" {
@@ -40,6 +42,7 @@ variable "compute_aggregates" {
     zone     = string
     hosts    = list(string)
   }))
+  default = []
 }
 
 variable "quotas" {
@@ -69,6 +72,7 @@ variable "quotas" {
           backup_gigabytes     = optional(number)
       }))
   }))
+  default = []
 }
 
 variable "users" {
@@ -79,6 +83,7 @@ variable "users" {
     email    = string
     enabled  = string
   }))
+  default = []
 }
 
 variable "user_project_roles" {
@@ -88,6 +93,7 @@ variable "user_project_roles" {
     project  = string
     role     = string
   }))
+  default = []
 }
 
 
@@ -99,6 +105,7 @@ variable "project_zones" {
     description = string
     ttl         = number
   }))
+  default = []
 }
 
 
@@ -110,6 +117,7 @@ variable "images" {
     container_format = string
     disk_format      = string
   }))
+  default = []
 }
 
 variable "flavors" {
@@ -120,6 +128,7 @@ variable "flavors" {
     vcpus = number
     disk  = number
   }))
+  default = []
 }
 
 variable "security_groups" {
@@ -136,6 +145,7 @@ variable "security_groups" {
       remote_ip_prefix = string
     }))
   }))
+  default = []
 }
 
 variable "networks" {
@@ -266,11 +276,11 @@ variable "data" {
       { name = "site_a_provider", subnets = ["site_a_provider"] },
       { name = "svc_public",   subnets = ["svc_public_site_a", "svc_public_site_b"] }
     ],
-    flavors = [ "vcpu1_ram1_nodisk", 
-                "vcpu2_ram2_nodisk",
-                "vcpu2_ram4_nodisk",
-                "vcpu4_ram4_nodisk",
-                "vcpu4_ram8_nodisk"
+    flavors = [ "vcpu1_ram1G_nodisk", 
+                "vcpu2_ram2G_nodisk",
+                "vcpu2_ram4G_nodisk",
+                "vcpu4_ram4G_nodisk",
+                "vcpu4_ram8G_nodisk"
     ],
     security_groups = [ "intranet-https-ingress",
                         "intranet-ssh-ingress",
@@ -327,6 +337,7 @@ variable "instances" {
     }))
     instance_labels = list(string)
   }))
+  default = []
 }
 
 variable "haproxy" {
@@ -355,5 +366,6 @@ variable "haproxy" {
       })
     }))
   }))
+  default = []
 }
 

@@ -47,6 +47,6 @@ data "openstack_networking_subnet_v2" "subnet" {
 #########################
 
 data "openstack_networking_secgroup_v2" "sec_groups" {
-  for_each = { for sg in var.data.security_groups : sg.name => sg if ! sg.create }
-  name        = each.value.name
+  for_each = { for sg in var.data.security_groups : sg => {} }
+  name        = each.key
 }
