@@ -1,0 +1,104 @@
+##########################################
+# Compute, Network, Block storage Quotas
+##########################################
+
+################################################################
+###
+### Default values, can be overrided into quotas.auto.tfvars
+###
+################################################################
+###
+### quotas = [
+###     project_name = "admin",
+###     compute = {
+###         ram                 = 40960
+###         cores               = 32
+###         instances           = 20
+###     },
+###     network = {
+###         floatingip          = 10
+###         network             = 4
+###         port                = 100
+###         rbac_policy         = 10
+###         router              = 4
+###         security_group      = 10
+###         security_group_rule = 100
+###         subnet              = 8
+###     },
+###     volume  = {
+###         volumes              = 10
+###         snapshots            = 4
+###         gigabytes            = 100
+###         per_volume_gigabytes = 10
+###         backups              = 4
+###         backup_gigabytes     = 10
+###     }
+###]
+
+##########################################
+# Compute Quotas
+##########################################
+
+resource "openstack_compute_quotaset_v2" "quota" {
+  for_each = { for quota in var.quotas: quota.project_name => quota if lookup(quota, "compute") != null }
+  project_id           = try(
+                             openstack_identity_project_v3.projects[each.key].id,
+                             data.openstack_identity_project_v3.projects[each.key].id
+                         )
+  ram                  = lookup(each.value, "ram", null)
+  cores                = lookup(each.value, "cores", null)
+  instances            = lookup(each.value, "instances", null)
+
+#  key_pairs            = 10
+#  server_groups        = 4
+#  server_group_members = 8
+}
+
+##########################################
+# Network Quotas
+##########################################
+
+resource "openstack_networking_quota_v2" "quota" {
+  for_each = { for quota in var.quotas: quota.project_name => quota if lookup(quota, "network") != null }
+  project_id           = try(
+                             openstack_identity_project_v3.projects[each.key].id,
+                             data.openstack_identity_project_v3.projects[each.key].id
+                         )
+  floatingip          = lookup(each.value.network, "floatingip", null)
+  network             = lookup(each.value.network, "network", null)
+  port                = lookup(each.value.network, "port", null)
+  router              = lookup(each.value.network, "router", null)
+  security_group      = lookup(each.value.network, "security_group", null)
+  security_group_rule = lookup(each.value.network, "security_group_rule", null)
+  subnet              = lookup(each.value.network, "subnet", null)
+
+# rbac_policy         = 10
+# subnetpool          = 2
+
+}
+
+##########################################
+# Block Storage (Cinder) Quotas
+##########################################
+
+resource "openstack_blockstorage_quotaset_v3" "quota" {
+  for_each = { for quota in var.quotas: quota.project_name => quota if lookup(quota, "volume") != null }
+  project_id           = try(
+                             openstack_identity_project_v3.projects[each.key].id,
+                             data.openstack_identity_project_v3.projects[each.key].id
+                         )
+  volumes              = lookup(each.value, "volumes", null)
+  snapshots            = lookup(each.value, "snapshots", null)
+  gigabytes            = lookup(each.value, "gigabytes", null)
+  per_volume_gigabytes = lookup(each.value, "per_volume_gigabytes", null)
+  backups              = lookup(each.value, "backups", null)
+  backup_gigabytes     = lookup(each.value, "backup_gigabytes", null)
+
+# groups = 100
+# volume_type_quota = {
+#   volumes_ssd = 30
+#   gigabytes_ssd = 500
+#   snapshots_ssd = 10
+# }
+
+}
