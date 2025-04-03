@@ -36,7 +36,7 @@ data "openstack_networking_subnet_v2" "subnet" {
           subnet_name = subnet
         }
       ]
-    ]): "${item.network_name}"-"${item.subnet_name}" => item
+    ]): "${item.network_name}-${item.subnet_name}" => item
   }
   name            = each.value.subnet_name
   network_id      = each.value.network_id
