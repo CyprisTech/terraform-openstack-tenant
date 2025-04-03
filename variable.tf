@@ -271,10 +271,9 @@ variable "data" {
     networks = [
       { name = "monitoring",   subnets = ["monitoring"] },
       { name = "provisioning", subnets = ["provisioning"] },
-      { name = "intranet",     subnets = ["intranet_site_a", "intranet_site_b"] },
-      { name = "site_b_provider",  subnets = ["site_b_provider"] },
+      { name = "intranet",     subnets = ["intranet_site_a"] },
       { name = "site_a_provider", subnets = ["site_a_provider"] },
-      { name = "svc_public",   subnets = ["svc_public_site_a", "svc_public_site_b"] }
+      { name = "svc_public",   subnets = ["svc_public_site_a"] }
     ],
     flavors = [ "vcpu1_ram1G_nodisk", 
                 "vcpu2_ram2G_nodisk",
