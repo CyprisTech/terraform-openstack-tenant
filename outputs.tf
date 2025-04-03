@@ -63,7 +63,6 @@ output "host_volume_mountpoint" {
       for instance in var.instances : [
         for volume in instance.data_volumes : merge ({
             instance_name = instance.name
-            ip_address_admin_port = local.instance_admin_ip_address[instance.name].ip_address
             ip_address_private_port = local.instance_private_ip_address[instance.name].ip_address
             mountpoint = volume.mountpoint
             device = openstack_compute_volume_attach_v2.attachments["${instance.name}-${volume.name}"].device
@@ -73,9 +72,12 @@ output "host_volume_mountpoint" {
           volume.uid != null ? { uid = volume.uid } : {},
           volume.gid != null ? { gid = volume.gid } : {},
           volume.username != null ? { username = volume.username } : {},
-          openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip != null ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {}
+          openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name] != null ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {},
+          try(local.instance_admin_ip_address[instance.name], null) != null ? { ip_address_admin_port = local.instance_admin_ip_address[instance.name].ip_address } : {}
         ) if try(volume.mountpoint, null) != null
       ]
     ]): item
   ]
+
+  depends_on = [openstack_compute_instance_v2.nodes]
 }
