@@ -289,6 +289,8 @@ variable "data" {
                         "public-http-ingress",
                         "public-https-ingress",
                         "public-smtp-ingress",
+                        "admin-ssh-ingress",
+                        "allow-all-traffic"
     ]
     project_zones = []
   }
