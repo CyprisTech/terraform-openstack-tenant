@@ -72,7 +72,9 @@ output "host_volume_mountpoint" {
           },
           volume.uid != null ? { uid = volume.uid } : {},
           volume.gid != null ? { uid = volume.gid } : {},
-          volume.username != null ? { uid = volume.username } : {}) if try(volume.mountpoint, null) != null
+          volume.username != null ? { uid = volume.username } : {},
+          openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip != null ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {}
+        ) if try(volume.mountpoint, null) != null
       ]
     ]): item
   ]
