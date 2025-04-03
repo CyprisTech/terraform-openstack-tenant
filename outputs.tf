@@ -32,18 +32,28 @@ output "volumes_devices" {
   }
 }
 
-output "private_port_ips" {
+output "instance_admin_ip_address" {
   value = {
-    for key, port in openstack_networking_port_v2.ports :
-    key => port.all_fixed_ips[0]
-    if can(regex("-private", port.name))
+    for item in flatten([
+      for instance in var.instances :  [
+        for port in openstack_networking_port_v2.provisioning : {
+          ip_address      = port.all_fixed_ips[0]
+          instance_name   = instance.name
+        } if openstack_compute_instance_v2.nodes[instance.name].id == port.device_id && can(regex("-provisioning", port.name))
+      ]
+    ]): item.instance_name => item
   }
 }
 
-output "admin_port_ips" {
+output "instance_private_ip_address" {
   value = {
-    for key, port in openstack_networking_port_v2.provisioning :
-    key => port.all_fixed_ips[0]
-    if can(regex("-provisioning", port.name))
+    for item in flatten([
+      for instance in var.instances :  [
+        for port in openstack_networking_port_v2.ports : {
+          ip_address      = port.all_fixed_ips[0]
+          instance_name   = instance.name
+        } if openstack_compute_instance_v2.nodes[instance.name].id == port.device_id && can(regex("-private", port.name))
+      ]
+    ]): item.instance_name => item
   }
 }
