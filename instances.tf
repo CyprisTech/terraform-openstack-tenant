@@ -99,48 +99,6 @@ resource "openstack_compute_volume_attach_v2" "attachments" {
   volume_id   = each.value.create ? openstack_blockstorage_volume_v3.volumes-data["${each.value.instance_name}-${each.value.volume_name}"].id : data.openstack_blockstorage_volume_v3.volumes-data["${each.value.instance_name}-${each.value.volume_name}"].id
 }
 
-resource "null_resource" "instance_volumes_setup" {
-  for_each = {
-    for item in flatten([
-      for instance in var.instances :  [
-        for volume in instance.data_volumes : {
-          instance_name = instance.name
-          volume_name   = volume.name
-          device        = openstack_compute_volume_attach_v2.attachments["${instance.name}-${volume.name}"].device
-          mountpoint    = volume.mountpoint
-          host_ip       = local.instance_provisioning_ip[instance.name].ip_address
-        } if lookup(volume, "mountpoint", null) != null
-      ]
-    ]): item.volume_name => item
-  }
-  depends_on = [
-    openstack_compute_volume_attach_v2.attachments,
-    openstack_networking_port_v2.ports,
-    openstack_networking_port_v2.provisioning
-  ]
-
-  connection {
-    type        = "ssh"
-    user        = var.ssh_user
-    host        = each.value.host_ip
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      # Format the volume as ext4
-      "sudo mkfs.ext4 ${each.value.device}",
-      
-      # Create the mount directory with ownership set to specified user
-      "sudo mkdir -p ${each.value.mountpoint}",
-      "sudo chown ${var.ssh_user}:${var.ssh_user} ${each.value.mountpoint}",
-      
-      # Mount the device and add it to fstab for persistent mounting
-      "echo '${each.value.device} ${each.value.mountpoint} ext4 defaults 0 0' | sudo tee -a /etc/fstab",
-      "sudo mount -a"
-    ]
-  }
-}
-
 resource "openstack_networking_floatingip_v2" "instance_floating_ip" {
   for_each   = {
     for item in flatten([

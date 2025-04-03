@@ -6,7 +6,6 @@ resource "openstack_lb_loadbalancer_v2" "haproxy" {
   name              = each.value.name
   availability_zone = each.value.az
   vip_subnet_id     = each.value.vip_subnet_id
-  #depends_on        = [null_resource.docker_swarm_start_stacks]
 }
 
 resource "openstack_lb_listener_v2" "haproxy_listener" {
