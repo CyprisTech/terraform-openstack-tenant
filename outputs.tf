@@ -32,8 +32,8 @@ output "volumes_devices" {
   }
 }
 
-output "instance_admin_ip_address" {
-  value = {
+locals {
+  instance_admin_ip_address = {
     for item in flatten([
       for instance in var.instances :  [
         for port in openstack_networking_port_v2.provisioning : {
@@ -43,10 +43,8 @@ output "instance_admin_ip_address" {
       ]
     ]): item.instance_name => item
   }
-}
 
-output "instance_private_ip_address" {
-  value = {
+  instance_private_ip_address = {
     for item in flatten([
       for instance in var.instances :  [
         for port in openstack_networking_port_v2.ports : {
@@ -56,4 +54,28 @@ output "instance_private_ip_address" {
       ]
     ]): item.instance_name => item
   }
+}
+
+output "host_volume_mountpoint" {
+
+  value = [
+    for item in flatten([
+      for instance in var.instances : [
+        for volume in instance.data_volumes : {
+          instance_name = instance.name
+          ip_address_admin_port = local.instance_admin_ip_address[instance.name].ip_address
+          ip_address_private_port = local.instance_private_ip_address[instance.name].ip_address
+          username = volume.username
+          uid = try(volume.uid)
+          gid = volume.gid
+          mountpoint = volume.mountpoint
+          device = openstack_compute_volume_attach_v2.attachments["${instance.name}-${volume.name}"].device
+
+          # volume_id = openstack_blockstorage_volume_v3.volumes-data["${instance.name}-${volume.name}"].id
+          # instance_id = openstack_compute_instance_v2.nodes["${instance.name}"].id
+
+        } if try(volume.mountpoint, null) != null
+      ]
+    ]): item
+  ]
 }

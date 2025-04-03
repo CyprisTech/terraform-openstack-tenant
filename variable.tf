@@ -329,12 +329,14 @@ variable "instances" {
       create = bool
     })
     data_volumes    = list(object({
-      name      = string
-      size      = number
-      az        = string
+      name       = string
+      size       = number
+      az         = string
       mountpoint = optional(string)
-      #mountpoint = "/opt/admin_ops"
-      create    = bool
+      username   = optional(string)
+      uid        = optional(string)
+      gid        = optional(string)
+      create     = bool
     }))
     instance_labels = list(string)
   }))
