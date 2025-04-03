@@ -25,3 +25,25 @@ output "subnet_ids" {
   }]
 }
 
+output "volumes_devices" {
+  value = {
+    for key, attch in openstack_compute_volume_attach_v2.attachments :
+    key => attch.device
+  }
+}
+
+output "private_port_ips" {
+  value = {
+    for key, port in openstack_networking_port_v2.ports :
+    key => port.all_fixed_ips[0]
+    if can(regex("-private", port.name))
+  }
+}
+
+output "admin_port_ips" {
+  value = {
+    for key, port in openstack_networking_port_v2.provisioning :
+    key => port.all_fixed_ips[0]
+    if can(regex("-provisioning", port.name))
+  }
+}

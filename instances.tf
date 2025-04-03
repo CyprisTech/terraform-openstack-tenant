@@ -36,13 +36,6 @@ resource "openstack_networking_port_v2" "ports" {
   security_group_ids  = each.value.security_group_ids
 }
 
-output "port_ip_address" {
-  value = {
-    for key, port in openstack_networking_port_v2.ports :
-    key => port.all_fixed_ips[0]
-  }
-}
-
 resource "openstack_compute_instance_v2" "nodes" {
   for_each          = { for instance in var.instances : instance.name => instance }
   name              = each.key
@@ -104,13 +97,6 @@ resource "openstack_compute_volume_attach_v2" "attachments" {
 
   instance_id = openstack_compute_instance_v2.nodes[each.value.instance_name].id
   volume_id   = each.value.create ? openstack_blockstorage_volume_v3.volumes-data["${each.value.instance_name}-${each.value.volume_name}"].id : data.openstack_blockstorage_volume_v3.volumes-data["${each.value.instance_name}-${each.value.volume_name}"].id
-}
-
-output "volumes_devices" {
-  value = {
-    for key, attch in openstack_compute_volume_attach_v2.attachments :
-    key => attch.device
-  }
 }
 
 resource "null_resource" "instance_volumes_setup" {

@@ -38,12 +38,3 @@ resource "openstack_networking_port_v2" "provisioning" {
   admin_state_up      = true
   security_group_ids  = each.value.security_group_ids
 }
-
-
-output "admin_port_ips" {
-  value = {
-    for key, port in openstack_networking_port_v2.ports :
-    key => port.all_fixed_ips[0]
-    if can(regex("-provisioning", port.name))
-  }
-}
