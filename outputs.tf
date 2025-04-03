@@ -71,8 +71,8 @@ output "host_volume_mountpoint" {
             # instance_id = openstack_compute_instance_v2.nodes["${instance.name}"].id
           },
           volume.uid != null ? { uid = volume.uid } : {},
-          volume.gid != null ? { uid = volume.gid } : {},
-          volume.username != null ? { uid = volume.username } : {},
+          volume.gid != null ? { gid = volume.gid } : {},
+          volume.username != null ? { username = volume.username } : {},
           openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip != null ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {}
         ) if try(volume.mountpoint, null) != null
       ]
