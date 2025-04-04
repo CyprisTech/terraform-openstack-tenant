@@ -36,17 +36,50 @@ resource "openstack_networking_port_v2" "ports" {
   security_group_ids  = each.value.security_group_ids
 }
 
+locals {
+  merged_user_data = { for instance in var.instances : instance.name => {
+
+  runcmd = concat(
+    coalesce(var.cloud_init_common.runcmd, []),
+    coalesce(instance.cloud_init.runcmd, [])
+  )
+  
+  users = concat(
+    coalesce(var.cloud_init_common.users, []),
+    coalesce(instance.cloud_init.users, [])
+  )
+  
+  packages = concat(
+    coalesce(var.cloud_init_common.packages, []),
+    coalesce(instance.cloud_init.packages, [])
+  )
+  }}
+}
+locals {
+  merged_config = { for key, config in local.merged_user_data : key => {
+    runcmd   = concat(coalesce(var.cloud_init_common.runcmd, []), coalesce(config.runcmd, []))
+    users    = concat(coalesce(var.cloud_init_common.users, []), coalesce(config.users, []))
+    packages = concat(coalesce(var.cloud_init_common.packages, []), coalesce(config.packages, []))
+  }}
+}
+
 resource "openstack_compute_instance_v2" "nodes" {
   for_each          = { for instance in var.instances : instance.name => instance }
   name              = each.key
   flavor_name       = each.value.flavor
   availability_zone = each.value.az
 
-  user_data = <<EOF
-${templatefile("${path.module}/templates/cloud-init/cloud-init-admin_user.tpl", {
-    ssh_admin_user = var.ssh_user
-  })}
-EOF
+#  user_data = <<EOF
+#    ${templatefile("${path.module}/templates/cloud-init/cloud-init-admin_user.tpl", {
+#        ssh_admin_user = var.ssh_user
+#    })}
+#  EOF
+
+  #user_data = try(yamlencode(local.merged_config[each.value.name]), null)
+  user_data = try(
+    "#cloud-config\n${yamlencode(local.merged_config[each.value.name])}",
+    null
+  )
 
   depends_on      = [
     openstack_networking_port_v2.ports,

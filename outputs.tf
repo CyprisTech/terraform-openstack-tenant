@@ -81,3 +81,7 @@ output "host_volume_mountpoint" {
 
   depends_on = [openstack_compute_instance_v2.nodes]
 }
+
+output "cloud_config" {
+  value = [for config in local.merged_config: config]
+}

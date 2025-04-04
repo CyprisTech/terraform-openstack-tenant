@@ -339,6 +339,11 @@ variable "instances" {
       create     = bool
     }))
     instance_labels = list(string)
+    cloud_init = optional(object({
+      runcmd = optional(list(any))
+      users = optional(list(any))
+      packages = optional(list(any))
+    }))
   }))
   default = []
 }
@@ -370,5 +375,16 @@ variable "haproxy" {
     }))
   }))
   default = []
+}
+
+variable "cloud_init_common" {
+  description = "Common cloud init user data for tenant instances"
+  type = object({
+    runcmd = optional(list(any))
+    users = optional(list(any))
+    packages = optional(list(any))
+  })
+    
+  default = {}
 }
 
