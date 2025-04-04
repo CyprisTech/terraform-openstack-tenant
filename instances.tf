@@ -37,29 +37,55 @@ resource "openstack_networking_port_v2" "ports" {
 }
 
 locals {
+  runcmd_init_volume = {
+    for volume in local.host_volume_mountpoint : "${volume.instance_name}" => {
+      cmds = [
+        "sudo mkfs.ext4 ${volume.device}",
+        "sudo mkdir -p ${volume.mountpoint}",
+
+        lookup(volume, "username", null) != null ? 
+          "sudo getent group ${volume.username} || sudo groupadd --system --gid ${volume.gid} ${volume.username}" : "",
+
+        lookup(volume, "username", null) != null ? 
+          "id -u ${volume.username} >/dev/null 2>&1 || sudo useradd --system --no-create-home --uid ${volume.uid} --gid ${volume.gid} ${volume.username}" : "",
+
+        "echo '${volume.device} ${volume.mountpoint} ext4 defaults 0 0' | sudo tee -a /etc/fstab",
+        "sudo mount -a",
+
+        lookup(volume, "uid", null) != null ? 
+          "sudo chown ${volume.uid}:${volume.gid} ${volume.mountpoint}" : "sudo chown ${var.ssh_user}: ${volume.mountpoint}",
+      ]
+    } if try(volume.mountpoint, null) != null
+  }
+}
+
+locals {
   merged_user_data = { for instance in var.instances : instance.name => {
 
-  runcmd = concat(
-    coalesce(var.cloud_init_common.runcmd, []),
-    coalesce(instance.cloud_init.runcmd, [])
-  )
-  
-  users = concat(
-    coalesce(var.cloud_init_common.users, []),
-    coalesce(instance.cloud_init.users, [])
-  )
-  
-  packages = concat(
-    coalesce(var.cloud_init_common.packages, []),
-    coalesce(instance.cloud_init.packages, [])
-  )
+    runcmd = concat(
+      # coalesce(local.runcmd_init_volume[instance.name].cmds, []), # Creates cycle dependency instance -> local > instance (in locals{host_volume_mountpoint})
+      coalesce(var.cloud_init_common.runcmd, []),
+      coalesce(instance.cloud_init.runcmd, [])
+    )
+    
+    users = concat(
+      coalesce(var.cloud_init_common.users, []),
+      coalesce(instance.cloud_init.users, [])
+    )
+    
+    packages = concat(
+      coalesce(var.cloud_init_common.packages, []),
+      coalesce(instance.cloud_init.packages, [])
+    )
   }}
 }
+
 locals {
   merged_config = { for key, config in local.merged_user_data : key => {
-    runcmd   = concat(coalesce(var.cloud_init_common.runcmd, []), coalesce(config.runcmd, []))
-    users    = concat(coalesce(var.cloud_init_common.users, []), coalesce(config.users, []))
-    packages = concat(coalesce(var.cloud_init_common.packages, []), coalesce(config.packages, []))
+    runcmd   = config.runcmd
+    users    = config.users
+    packages = config.packages
+    system_info = { default_user = { name = "" } }
   }}
 }
 
@@ -69,13 +95,13 @@ resource "openstack_compute_instance_v2" "nodes" {
   flavor_name       = each.value.flavor
   availability_zone = each.value.az
 
-#  user_data = <<EOF
-#    ${templatefile("${path.module}/templates/cloud-init/cloud-init-admin_user.tpl", {
-#        ssh_admin_user = var.ssh_user
-#    })}
-#  EOF
+  #  user_data = <<EOF
+  #    ${templatefile("${path.module}/templates/cloud-init/cloud-init-admin_user.tpl", {
+  #        ssh_admin_user = var.ssh_user
+  #    })}
+  #  EOF
 
-  #user_data = try(yamlencode(local.merged_config[each.value.name]), null)
+  # user_data = try(yamlencode(local.merged_config[each.value.name]), null)
   user_data = try(
     "#cloud-config\n${yamlencode(local.merged_config[each.value.name])}",
     null

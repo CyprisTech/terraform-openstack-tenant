@@ -56,9 +56,9 @@ locals {
   }
 }
 
-output "host_volume_mountpoint" {
+locals {
 
-  value = [
+  host_volume_mountpoint = [
     for item in flatten([
       for instance in var.instances : [
         for volume in instance.data_volumes : merge ({
@@ -78,10 +78,17 @@ output "host_volume_mountpoint" {
       ]
     ]): item
   ]
+}
 
+output "host_volume_mountpoint" {
+  value = local.host_volume_mountpoint
   depends_on = [openstack_compute_instance_v2.nodes]
 }
 
 output "cloud_config" {
   value = [for config in local.merged_config: config]
+}
+
+output "runcmd_init_volume" {
+  value = local.runcmd_init_volume
 }
