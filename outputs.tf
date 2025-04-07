@@ -32,54 +32,6 @@ output "volumes_devices" {
   }
 }
 
-locals {
-  instance_admin_ip_address = {
-    for item in flatten([
-      for instance in var.instances :  [
-        for port in openstack_networking_port_v2.provisioning : {
-          ip_address      = port.all_fixed_ips[0]
-          instance_name   = instance.name
-        } if openstack_compute_instance_v2.nodes[instance.name].id == port.device_id && can(regex("-provisioning", port.name))
-      ]
-    ]): item.instance_name => item
-  }
-
-  instance_private_ip_address = {
-    for item in flatten([
-      for instance in var.instances :  [
-        for port in openstack_networking_port_v2.ports : {
-          ip_address      = port.all_fixed_ips[0]
-          instance_name   = instance.name
-        } if openstack_compute_instance_v2.nodes[instance.name].id == port.device_id && can(regex("-private", port.name))
-      ]
-    ]): item.instance_name => item
-  }
-}
-
-locals {
-
-  host_volume_mountpoint = [
-    for item in flatten([
-      for instance in var.instances : [
-        for volume in instance.data_volumes : merge ({
-            instance_name = instance.name
-            ip_address_private_port = local.instance_private_ip_address[instance.name].ip_address
-            mountpoint = volume.mountpoint
-            device = openstack_compute_volume_attach_v2.attachments["${instance.name}-${volume.name}"].device
-            # volume_id = openstack_blockstorage_volume_v3.volumes-data["${instance.name}-${volume.name}"].id
-            # instance_id = openstack_compute_instance_v2.nodes["${instance.name}"].id
-          },
-          volume.uid != null ? { uid = volume.uid } : {},
-          volume.gid != null ? { gid = volume.gid } : {},
-          volume.username != null ? { username = volume.username } : {},
-          openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name] != null ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {},
-          try(local.instance_admin_ip_address[instance.name], null) != null ? { ip_address_admin_port = local.instance_admin_ip_address[instance.name].ip_address } : {}
-        ) if try(volume.mountpoint, null) != null
-      ]
-    ]): item
-  ]
-}
-
 output "host_volume_mountpoint" {
   value = local.host_volume_mountpoint
   depends_on = [openstack_compute_instance_v2.nodes]
@@ -91,4 +43,8 @@ output "cloud_config" {
 
 output "runcmd_init_volume" {
   value = local.runcmd_init_volume
+}
+
+output "instance_details" {
+  value = local.instance_details
 }

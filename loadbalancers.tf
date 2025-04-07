@@ -68,7 +68,7 @@ resource "openstack_lb_member_v2" "haproxy_pool_member" {
             listener_name   = listener.name
             instance_name   = instance.name
             protocol_port   = listener.port
-            host_ip         = local.instance_private_ip[instance.name].ip_address
+            host_ip         = local.instance_private_ip_address[instance.name].ip_address
             pool_id         = openstack_lb_pool_v2.haproxy_pool["${ha.name}-${listener.name}"].id
           } if contains(listener.pool.instance_names, instance.name)
         ]
