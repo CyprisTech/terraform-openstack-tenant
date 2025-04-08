@@ -49,8 +49,8 @@ locals {
 locals {
   instance_details = [
     for instance in var.instances : merge ({
-        instance_name = instance.name
-        instance_labels = instance.instance_labels
+        hostname = instance.name
+        labels = instance.instance_labels
         ip_address_private = local.instance_private_ip_address[instance.name].ip_address
         #instance_id = openstack_compute_instance_v2.nodes["${instance.name}"].id
       },
