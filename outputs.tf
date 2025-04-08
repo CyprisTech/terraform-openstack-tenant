@@ -48,3 +48,7 @@ output "runcmd_init_volume" {
 output "instance_details" {
   value = local.instance_details
 }
+
+output "private_networks" {
+  value = local.private_networks
+}

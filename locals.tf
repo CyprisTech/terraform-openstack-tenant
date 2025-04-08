@@ -59,3 +59,19 @@ locals {
     )
   ]
 }
+
+
+locals {
+  private_networks = [
+    for item in flatten([
+      for network in var.networks : [
+        for subnet in network.subnets : {
+          net_name = network.name
+          net_id = openstack_networking_network_v2.networks[network.name].id
+          subnet_name = subnet.name
+          subnet_id = openstack_networking_subnet_v2.subnets["${network.name}-${subnet.name}"]
+        }
+      ]
+    ]) : item
+  ]
+}
