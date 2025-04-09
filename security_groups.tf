@@ -24,3 +24,12 @@ resource "openstack_networking_secgroup_rule_v2" "sec_rules" {
 
   depends_on = [openstack_networking_secgroup_v2.sec_groups]
 }
+
+resource "openstack_networking_rbac_policy_v2" "common_secgroup_share" {
+  for_each = { for sg in var.security_groups : sg.name => sg }
+
+  object_type = "security_group"
+  object_id   = openstack_networking_secgroup_v2.sec_groups[each.key].id
+  action      = "access_as_shared"
+  target_tenant = "*"
+}
