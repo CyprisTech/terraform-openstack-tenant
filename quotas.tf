@@ -71,10 +71,8 @@ resource "openstack_networking_quota_v2" "quota" {
   security_group      = lookup(each.value.network, "security_group", null)
   security_group_rule = lookup(each.value.network, "security_group_rule", null)
   subnet              = lookup(each.value.network, "subnet", null)
-
-# rbac_policy         = 10
+  rbac_policy         = lookup(each.value.network, "rbac_policy", null)
 # subnetpool          = 2
-
 }
 
 ##########################################
@@ -100,5 +98,4 @@ resource "openstack_blockstorage_quotaset_v3" "quota" {
 #   gigabytes_ssd = 500
 #   snapshots_ssd = 10
 # }
-
 }

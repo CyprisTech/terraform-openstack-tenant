@@ -62,6 +62,7 @@ variable "quotas" {
           router               = optional(number)
           security_group       = optional(number)
           security_group_rule  = optional(number)
+          rbac_policy          = optional(number)
       }))
       volume = optional(object({
 	  volumes              = optional(number)
