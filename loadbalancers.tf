@@ -5,7 +5,7 @@ resource "openstack_lb_loadbalancer_v2" "haproxy" {
   for_each          = { for ha in var.haproxy : ha.name => ha }
   name              = each.value.name
   availability_zone = each.value.az
-  vip_subnet_id     = each.value.vip_subnet_id
+  vip_subnet_id     = openstack_networking_subnet_v2.subnets["${each.value.vip_net_name}-${each.value.vip_subnet_name}"].id
 }
 
 resource "openstack_lb_listener_v2" "haproxy_listener" {
@@ -109,7 +109,10 @@ resource "openstack_networking_floatingip_v2" "ha_floating_ip" {
   for_each   = {
     for ha in var.haproxy: ha.name => {
       pool_name = ha.fip_pool_name
-      subnet_ids = ha.fip_subnet_ids
+      subnet_ids = [try(
+                      data.openstack_networking_subnet_v2.subnet["${ha.fip_pool_name}-${ha.fip_subnet_name}"].id,
+                      openstack_networking_subnet_v2.subnets["${ha.fip_pool_name}-${ha.fip_subnet_name}"].id
+      )]
     }
   }
   pool       = each.value.pool_name

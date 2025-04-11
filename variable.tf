@@ -354,9 +354,10 @@ variable "haproxy" {
   type = list(object({
     name               = string
     az                 = string
-    vip_subnet_id      = string
+    vip_net_name       = string
+    vip_subnet_name    = string
     fip_pool_name      = string
-    fip_subnet_ids     = list(string)
+    fip_subnet_name    = string
     listeners          = list(object({
       name               = string
       protocol           = string
