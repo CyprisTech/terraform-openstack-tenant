@@ -55,7 +55,7 @@ locals {
         ip_address_private  = local.instance_private_ip_address[instance.name].ip_address
         #instance_id        = openstack_compute_instance_v2.nodes["${instance.name}"].id
       },
-      openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name] != null ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {},
+      can(openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name]) ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {},
       try(local.instance_admin_ip_address[instance.name], null) != null ? { ip_address_admin = local.instance_admin_ip_address[instance.name].ip_address } : {}
     )
   ]
