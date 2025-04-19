@@ -45,9 +45,9 @@ resource "openstack_compute_quotaset_v2" "quota" {
                              openstack_identity_project_v3.projects[each.key].id,
                              data.openstack_identity_project_v3.projects[each.key].id
                          )
-  ram                  = lookup(each.value, "ram", null)
-  cores                = lookup(each.value, "cores", null)
-  instances            = lookup(each.value, "instances", null)
+  ram                  = lookup(each.value.compute, "ram", null)
+  cores                = lookup(each.value.compute, "cores", null)
+  instances            = lookup(each.value.compute, "instances", null)
 
 #  key_pairs            = 10
 #  server_groups        = 4
@@ -85,12 +85,12 @@ resource "openstack_blockstorage_quotaset_v3" "quota" {
                              openstack_identity_project_v3.projects[each.key].id,
                              data.openstack_identity_project_v3.projects[each.key].id
                          )
-  volumes              = lookup(each.value, "volumes", null)
-  snapshots            = lookup(each.value, "snapshots", null)
-  gigabytes            = lookup(each.value, "gigabytes", null)
-  per_volume_gigabytes = lookup(each.value, "per_volume_gigabytes", null)
-  backups              = lookup(each.value, "backups", null)
-  backup_gigabytes     = lookup(each.value, "backup_gigabytes", null)
+  volumes              = lookup(each.value.volume, "volumes", null)
+  snapshots            = lookup(each.value.volume, "snapshots", null)
+  gigabytes            = lookup(each.value.volume, "gigabytes", null)
+  per_volume_gigabytes = lookup(each.value.volume, "per_volume_gigabytes", null)
+  backups              = lookup(each.value.volume, "backups", null)
+  backup_gigabytes     = lookup(each.value.volume, "backup_gigabytes", null)
 
 # groups = 100
 # volume_type_quota = {
