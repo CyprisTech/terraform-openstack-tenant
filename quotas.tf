@@ -45,9 +45,9 @@ resource "openstack_compute_quotaset_v2" "quota" {
                              openstack_identity_project_v3.projects[each.key].id,
                              data.openstack_identity_project_v3.projects[each.key].id
                          )
-  ram                  = lookup(each.value.compute, "ram", null)
-  cores                = lookup(each.value.compute, "cores", null)
-  instances            = lookup(each.value.compute, "instances", null)
+  ram                  = lookup(each.value.compute, "ram", 40960)
+  cores                = lookup(each.value.compute, "cores", 32)
+  instances            = lookup(each.value.compute, "instances", 20)
 
 #  key_pairs            = 10
 #  server_groups        = 4
@@ -64,14 +64,14 @@ resource "openstack_networking_quota_v2" "quota" {
                              openstack_identity_project_v3.projects[each.key].id,
                              data.openstack_identity_project_v3.projects[each.key].id
                          )
-  floatingip          = lookup(each.value.network, "floatingip", null)
-  network             = lookup(each.value.network, "network", null)
-  port                = lookup(each.value.network, "port", null)
-  router              = lookup(each.value.network, "router", null)
-  security_group      = lookup(each.value.network, "security_group", null)
-  security_group_rule = lookup(each.value.network, "security_group_rule", null)
-  subnet              = lookup(each.value.network, "subnet", null)
-  rbac_policy         = lookup(each.value.network, "rbac_policy", null)
+  floatingip          = lookup(each.value.network, "floatingip", 10)
+  network             = lookup(each.value.network, "network", 4)
+  port                = lookup(each.value.network, "port", 10)
+  router              = lookup(each.value.network, "router", 4)
+  security_group      = lookup(each.value.network, "security_group", 10)
+  security_group_rule = lookup(each.value.network, "security_group_rule", 100)
+  subnet              = lookup(each.value.network, "subnet", 8)
+  rbac_policy         = lookup(each.value.network, "rbac_policy", 10)
 # subnetpool          = 2
 }
 
@@ -85,12 +85,12 @@ resource "openstack_blockstorage_quotaset_v3" "quota" {
                              openstack_identity_project_v3.projects[each.key].id,
                              data.openstack_identity_project_v3.projects[each.key].id
                          )
-  volumes              = lookup(each.value.volume, "volumes", null)
-  snapshots            = lookup(each.value.volume, "snapshots", null)
-  gigabytes            = lookup(each.value.volume, "gigabytes", null)
-  per_volume_gigabytes = lookup(each.value.volume, "per_volume_gigabytes", null)
-  backups              = lookup(each.value.volume, "backups", null)
-  backup_gigabytes     = lookup(each.value.volume, "backup_gigabytes", null)
+  volumes              = lookup(each.value.volume, "volumes", 10)
+  snapshots            = lookup(each.value.volume, "snapshots", 4)
+  gigabytes            = lookup(each.value.volume, "gigabytes", 100)
+  per_volume_gigabytes = lookup(each.value.volume, "per_volume_gigabytes", 10)
+  backups              = lookup(each.value.volume, "backups", 4)
+  backup_gigabytes     = lookup(each.value.volume, "backup_gigabytes", 10)
 
 # groups = 100
 # volume_type_quota = {
