@@ -68,7 +68,7 @@ variable "quotas" {
 	  volumes              = optional(number)
 	  snapshots            = optional(number)
 	  per_volume_gigabytes = optional(number)
-          gygabytes            = optional(number)
+          gigabytes            = optional(number)
           backups              = optional(number)
           backup_gigabytes     = optional(number)
       }))
