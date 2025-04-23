@@ -49,11 +49,12 @@ locals {
 locals {
   instance_details = [
     for instance in var.instances : merge ({
-        hostname            = instance.name
-        labels              = instance.instance_labels
-        availability_zone   = openstack_compute_instance_v2.nodes["${instance.name}"].availability_zone
-        ip_address_private  = local.instance_private_ip_address[instance.name].ip_address
-        #instance_id        = openstack_compute_instance_v2.nodes["${instance.name}"].id
+        hostname                  = instance.name
+        labels                    = instance.instance_labels
+        availability_zone         = openstack_compute_instance_v2.nodes["${instance.name}"].availability_zone
+        volume_availability_zone  = openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone
+        ip_address_private        = local.instance_private_ip_address[instance.name].ip_address
+        #instance_id              = openstack_compute_instance_v2.nodes["${instance.name}"].id
       },
       can(openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name]) ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association[instance.name].floating_ip } : {},
       try(local.instance_admin_ip_address[instance.name], null) != null ? { ip_address_admin = local.instance_admin_ip_address[instance.name].ip_address } : {}
