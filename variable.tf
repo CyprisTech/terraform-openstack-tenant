@@ -340,7 +340,6 @@ variable "instances" {
       create     = bool
     }))
     instance_labels = list(string)
-    #bind_mounts     = list(any)
     bind_mounts = optional(list(object({
       username           = string
       uid                = string

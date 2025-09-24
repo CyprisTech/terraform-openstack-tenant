@@ -13,14 +13,14 @@ output "security_groups_created" {
 
 output "network_ids" {
   value = [for net in openstack_networking_network_v2.networks : {
-    network_id = net.id
+    network_id   = net.id
     network_name = net.name
   }]
 }
 
 output "subnet_ids" {
   value = [for subnet in openstack_networking_subnet_v2.subnets : {
-    subnet_id = subnet.id
+    subnet_id   = subnet.id
     subnet_name = subnet.name
   }]
 }
@@ -33,12 +33,16 @@ output "volumes_devices" {
 }
 
 output "host_volume_mountpoint" {
-  value = local.host_volume_mountpoint
+  value      = local.host_volume_mountpoint
   depends_on = [openstack_compute_instance_v2.nodes]
 }
 
+output "host_bind_mounts" {
+  value = local.host_bind_mounts
+}
+
 output "cloud_config" {
-  value = [for config in local.merged_config: config]
+  value = [for config in local.merged_config : config]
 }
 
 output "runcmd_init_volume" {
