@@ -22,7 +22,7 @@ variable "region" {
 variable "ssh_user" {
   description = "Tenant admin user for VM instances"
   type        = string
-  default = ""
+  default     = ""
 }
 
 variable "projects" {
@@ -38,40 +38,40 @@ variable "projects" {
 variable "compute_aggregates" {
   description = "List of compute aggregates to create"
   type = list(object({
-    name     = string
-    zone     = string
-    hosts    = list(string)
+    name  = string
+    zone  = string
+    hosts = list(string)
   }))
   default = []
 }
 
 variable "quotas" {
   description = "Network, Compute and Storage quotas"
-  type        = list(object({
-      project_name  = string
-      compute 	    = optional(object({
-	  ram           = optional(number)
-	  cores         = optional(number)
-          instances     = optional(number)
-      }))
-      network = optional(object({
-	  floatingip           = optional(number)
-	  network              = optional(number)
-	  subnet               = optional(number)
-          port                 = optional(number)
-          router               = optional(number)
-          security_group       = optional(number)
-          security_group_rule  = optional(number)
-          rbac_policy          = optional(number)
-      }))
-      volume = optional(object({
-	  volumes              = optional(number)
-	  snapshots            = optional(number)
-	  per_volume_gigabytes = optional(number)
-          gigabytes            = optional(number)
-          backups              = optional(number)
-          backup_gigabytes     = optional(number)
-      }))
+  type = list(object({
+    project_name = string
+    compute = optional(object({
+      ram       = optional(number)
+      cores     = optional(number)
+      instances = optional(number)
+    }))
+    network = optional(object({
+      floatingip          = optional(number)
+      network             = optional(number)
+      subnet              = optional(number)
+      port                = optional(number)
+      router              = optional(number)
+      security_group      = optional(number)
+      security_group_rule = optional(number)
+      rbac_policy         = optional(number)
+    }))
+    volume = optional(object({
+      volumes              = optional(number)
+      snapshots            = optional(number)
+      per_volume_gigabytes = optional(number)
+      gigabytes            = optional(number)
+      backups              = optional(number)
+      backup_gigabytes     = optional(number)
+    }))
   }))
   default = []
 }
@@ -90,9 +90,9 @@ variable "users" {
 variable "user_project_roles" {
   description = "Mapping of users to projects and roles"
   type = list(object({
-    user     = string
-    project  = string
-    role     = string
+    user    = string
+    project = string
+    role    = string
   }))
   default = []
 }
@@ -138,11 +138,11 @@ variable "security_groups" {
     name        = string
     description = string
     rules = list(object({
-      protocol  = optional(string)
-      direction = string
-      ethertype = string
-      port_min  = optional(number)
-      port_max  = optional(number)
+      protocol         = optional(string)
+      direction        = string
+      ethertype        = string
+      port_min         = optional(number)
+      port_max         = optional(number)
       remote_ip_prefix = string
     }))
   }))
@@ -153,102 +153,102 @@ variable "networks" {
   description = "List of networks, subnets, and routers"
   type = list(object({
     admin_state_up = bool
-    name     = string
-    mtu      = number
-    physnet  = optional(string)
-    type     = optional(string)
-    az_hints = list(string)
-    external = bool
-    subnets  = list(object({
-      name         = string
-      ip_version   = number
-      cidr         = string
-      nameservers  = optional(list(string))
-      gateway_ip   = optional(string)
+    name           = string
+    mtu            = number
+    physnet        = optional(string)
+    type           = optional(string)
+    az_hints       = list(string)
+    external       = bool
+    subnets = list(object({
+      name        = string
+      ip_version  = number
+      cidr        = string
+      nameservers = optional(list(string))
+      gateway_ip  = optional(string)
       extra_routes = optional(list(object({
-        to = string
+        to  = string
         via = string
       })))
       allocation_pools = optional(list(object({
         start = string
-        end = string
+        end   = string
       })))
-      routers         = optional(list(object({
-        name                       = string
-        admin_state_up             = bool
-        external_network_name      = string
-        subnet_name                = string
-        availability_zone_hints    = list(string)
-        ip_address                 = string
-        subnet_cidr_override       = optional(string)
-        subnet_extra_route_to      = optional(string)
+      routers = optional(list(object({
+        name                    = string
+        admin_state_up          = bool
+        external_network_name   = string
+        subnet_name             = string
+        availability_zone_hints = list(string)
+        ip_address              = string
+        subnet_cidr_override    = optional(string)
+        subnet_extra_route_to   = optional(string)
       })))
     }))
   }))
   default = [{
-    name     = "private"
-    mtu      = 1362
-    az_hints = ["site-a-az", "site-b-az"]
-    external = false
+    name           = "private"
+    mtu            = 1362
+    az_hints       = ["site-a-az", "site-b-az"]
+    external       = false
     admin_state_up = true
-    subnets  = [{
-      name         = "private"
-      ip_version   = 4
-      cidr         = "10.20.5.0/24"
-      nameservers  = ["1.1.1.1"]
-      gateway_ip   = "10.20.5.1"
-      routers      = [
+    subnets = [{
+      name        = "private"
+      ip_version  = 4
+      cidr        = "10.20.5.0/24"
+      nameservers = ["1.1.1.1"]
+      gateway_ip  = "10.20.5.1"
+      routers = [
         {
-          name                     = "router-site_a_provider"
-          admin_state_up           = true
-          external_network_name    = "site_a_provider"
-          subnet_name              = "site_a_provider"
-          availability_zone_hints  = ["site-a-az"]
-          ip_address               = "10.20.5.10"
+          name                    = "router-site_a_provider"
+          admin_state_up          = true
+          external_network_name   = "site_a_provider"
+          subnet_name             = "site_a_provider"
+          availability_zone_hints = ["site-a-az"]
+          ip_address              = "10.20.5.10"
         },
         {
-          name                     = "router-intranet_site_a"
-          admin_state_up           = true
-          external_network_name    = "intranet"
-          subnet_name              = "intranet_site_a"
-          subnet_extra_route_to    = "10.10.0.0/22"
-          availability_zone_hints  = ["site-a-az"]
-          ip_address               = "10.20.5.11"
+          name                    = "router-intranet_site_a"
+          admin_state_up          = true
+          external_network_name   = "intranet"
+          subnet_name             = "intranet_site_a"
+          subnet_extra_route_to   = "10.10.0.0/22"
+          availability_zone_hints = ["site-a-az"]
+          ip_address              = "10.20.5.11"
         },
         {
-          name                     = "router-svc_public_site_a"
-          admin_state_up           = true
-          external_network_name    = "svc_public"
-          subnet_name              = "svc_public_site_a"
-          subnet_extra_route_to    = "10.10.4.0/22"
-          availability_zone_hints  = ["site-a-az"]
-          ip_address               = "10.20.5.12"
+          name                    = "router-svc_public_site_a"
+          admin_state_up          = true
+          external_network_name   = "svc_public"
+          subnet_name             = "svc_public_site_a"
+          subnet_extra_route_to   = "10.10.4.0/22"
+          availability_zone_hints = ["site-a-az"]
+          ip_address              = "10.20.5.12"
         },
         {
-          name                     = "router-site_b_provider"
-          admin_state_up           = true
-          external_network_name    = "site_b_provider"
-          subnet_name              = "site_b_provider"
-          availability_zone_hints  = ["site-b-az"]
-          ip_address               = "10.20.5.128"
+          name                    = "router-site_b_provider"
+          admin_state_up          = true
+          external_network_name   = "site_b_provider"
+          subnet_name             = "site_b_provider"
+          availability_zone_hints = ["site-b-az"]
+          ip_address              = "10.20.5.128"
         },
         {
-          name                     = "router-intranet_site_b"
-          admin_state_up           = true
-          external_network_name    = "intranet"
-          subnet_name              = "intranet_site_b"
-          subnet_extra_route_to    = "10.10.0.0/22"
-          availability_zone_hints  = ["site-b-az"]
-          ip_address               = "10.20.5.129"
+          name                    = "router-intranet_site_b"
+          admin_state_up          = true
+          external_network_name   = "intranet"
+          subnet_name             = "intranet_site_b"
+          subnet_extra_route_to   = "10.10.0.0/22"
+          availability_zone_hints = ["site-b-az"]
+          ip_address              = "10.20.5.129"
         },
         {
-          name                     = "router-svc_public_site_b"
-          admin_state_up           = true
-          external_network_name    = "svc_public"
-          subnet_name              = "svc_public_site_b"
-          subnet_extra_route_to    = "10.10.4.0/22"
-          availability_zone_hints  = ["site-b-az"]
-          ip_address               = "10.20.5.130"
+          name                    = "router-svc_public_site_b"
+          admin_state_up          = true
+          external_network_name   = "svc_public"
+          subnet_name             = "svc_public_site_b"
+          subnet_extra_route_to   = "10.10.4.0/22"
+          availability_zone_hints = ["site-b-az"]
+          ip_address              = "10.20.5.130"
         }
       ]
     }]
@@ -270,28 +270,28 @@ variable "data" {
   default = {
     projects = []
     networks = [
-      { name = "monitoring",   subnets = ["monitoring"] },
+      { name = "monitoring", subnets = ["monitoring"] },
       { name = "provisioning", subnets = ["provisioning"] },
-      { name = "intranet",     subnets = ["intranet_site_a"] },
+      { name = "intranet", subnets = ["intranet_site_a"] },
       { name = "site_a_provider", subnets = ["site_a_provider"] },
-      { name = "svc_public",   subnets = ["svc_public_site_a"] }
+      { name = "svc_public", subnets = ["svc_public_site_a"] }
     ],
-    flavors = [ "vcpu1_ram1G_nodisk", 
-                "vcpu2_ram2G_nodisk",
-                "vcpu2_ram4G_nodisk",
-                "vcpu4_ram4G_nodisk",
-                "vcpu4_ram8G_nodisk"
+    flavors = ["vcpu1_ram1G_nodisk",
+      "vcpu2_ram2G_nodisk",
+      "vcpu2_ram4G_nodisk",
+      "vcpu4_ram4G_nodisk",
+      "vcpu4_ram8G_nodisk"
     ],
-    security_groups = [ "intranet-https-ingress",
-                        "intranet-ssh-ingress",
-                        "intranet-smtps-ingress",
-                        "intranet-smtp-starttls-ingress",
-                        "intranet-imaps-ingress",
-                        "public-http-ingress",
-                        "public-https-ingress",
-                        "public-smtp-ingress",
-                        "admin-ssh-ingress",
-                        "allow-all-traffic"
+    security_groups = ["intranet-https-ingress",
+      "intranet-ssh-ingress",
+      "intranet-smtps-ingress",
+      "intranet-smtp-starttls-ingress",
+      "intranet-imaps-ingress",
+      "public-http-ingress",
+      "public-https-ingress",
+      "public-smtp-ingress",
+      "admin-ssh-ingress",
+      "allow-all-traffic"
     ]
     project_zones = []
   }
@@ -310,26 +310,26 @@ variable "instances" {
     az                = string
     flavor            = string
     enable_admin_port = bool
-    ports             = list(object({
+    ports = list(object({
       name                 = string
       network_name         = string
       subnet_name          = string
       security_group_names = list(string)
       fip_pool_name        = optional(string)
       fip_subnet_name      = optional(string)
-      fip_dns_records      = optional(list(object({
-        name                 = string
-        zone                 = string
+      fip_dns_records = optional(list(object({
+        name = string
+        zone = string
       })))
     }))
-    root_volume     = object({
+    root_volume = object({
       name   = string
       size   = number
       az     = string
       image  = string
       create = bool
     })
-    data_volumes    = list(object({
+    data_volumes = list(object({
       name       = string
       size       = number
       az         = string
@@ -340,9 +340,19 @@ variable "instances" {
       create     = bool
     }))
     instance_labels = list(string)
+    #bind_mounts     = list(any)
+    bind_mounts = optional(list(object({
+      username           = string
+      uid                = string
+      gid                = string
+      path               = string
+      conf_src_file      = optional(string)
+      conf_template_file = optional(string)
+      template_vars      = optional(map(any))
+    })))
     cloud_init = optional(object({
-      runcmd = optional(list(any))
-      users = optional(list(any))
+      runcmd   = optional(list(any))
+      users    = optional(list(any))
       packages = optional(list(any))
     }))
   }))
@@ -352,27 +362,27 @@ variable "instances" {
 variable "haproxy" {
   description = "HAProxy configuration"
   type = list(object({
-    name               = string
-    az                 = string
-    vip_net_name       = string
-    vip_subnet_name    = string
-    fip_pool_name      = string
-    fip_subnet_name    = string
-    listeners          = list(object({
-      name               = string
-      protocol           = string
-      port               = number
-      dns_record_names	 = optional(list(string))
-      pool               = object({
-        protocol         = string
-        lb_method        = string
-        monitor          = object({
-          type            = string
-          delay           = number
-          timeout         = number
-          max_retries     = number
+    name            = string
+    az              = string
+    vip_net_name    = string
+    vip_subnet_name = string
+    fip_pool_name   = string
+    fip_subnet_name = string
+    listeners = list(object({
+      name             = string
+      protocol         = string
+      port             = number
+      dns_record_names = optional(list(string))
+      pool = object({
+        protocol  = string
+        lb_method = string
+        monitor = object({
+          type        = string
+          delay       = number
+          timeout     = number
+          max_retries = number
         })
-        instance_names   = list(string)
+        instance_names = list(string)
       })
     }))
   }))
@@ -382,11 +392,11 @@ variable "haproxy" {
 variable "cloud_init_common" {
   description = "Common cloud init user data for tenant instances"
   type = object({
-    runcmd = optional(list(any))
-    users = optional(list(any))
+    runcmd   = optional(list(any))
+    users    = optional(list(any))
     packages = optional(list(any))
   })
-    
+
   default = {}
 }
 
