@@ -350,9 +350,11 @@ variable "instances" {
       template_vars      = optional(map(any))
     })))
     cloud_init = optional(object({
-      runcmd   = optional(list(any))
-      users    = optional(list(any))
-      packages = optional(list(any))
+      runcmd      = optional(list(any))
+      users       = optional(list(any))
+      packages    = optional(list(any))
+      network     = optional(any)
+      write_files = optional(list(any))
     }))
   }))
   default = []
@@ -391,9 +393,11 @@ variable "haproxy" {
 variable "cloud_init_common" {
   description = "Common cloud init user data for tenant instances"
   type = object({
-    runcmd   = optional(list(any))
-    users    = optional(list(any))
-    packages = optional(list(any))
+    runcmd      = optional(list(any))
+    users       = optional(list(any))
+    packages    = optional(list(any))
+    network     = optional(any)
+    write_files = optional(list(any))
   })
 
   default = {}

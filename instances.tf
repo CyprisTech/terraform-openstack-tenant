@@ -77,6 +77,16 @@ locals {
       coalesce(var.cloud_init_common.packages, []),
       coalesce(instance.cloud_init.packages, [])
     )
+
+    network = concat(
+      coalesce(var.cloud_init_common.network, []),
+      coalesce(instance.cloud_init.network, [])
+    )
+
+    write_files = concat(
+      coalesce(var.cloud_init_common.write_files, []),
+      coalesce(instance.cloud_init.write_files, [])
+    )
   } }
 }
 
@@ -85,6 +95,8 @@ locals {
     runcmd      = config.runcmd
     users       = config.users
     packages    = config.packages
+    network     = config.network
+    write_files = config.write_files
     system_info = { default_user = { name = "" } }
   } }
 }
