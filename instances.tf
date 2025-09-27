@@ -38,7 +38,7 @@ resource "openstack_networking_port_v2" "ports" {
 
 locals {
   runcmd_init_volume = {
-    for volume in local.host_volume_mountpoint : "${volume.instance_name}" => {
+    for volume in local.host_volume_mountpoint : "${volume.instance_name}-${volume.mountpoint}" => {
       cmds = [
         "sudo mkfs.ext4 ${volume.device}",
         "sudo mkdir -p ${volume.mountpoint}",

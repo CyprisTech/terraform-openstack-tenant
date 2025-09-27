@@ -40,7 +40,7 @@ locals {
             volume.username != null ? { username = volume.username } : {},
             openstack_networking_floatingip_associate_v2.instance_fip_association["${instance.name}-${port.fip_pool_name}"] != null ? { ip_address_fip = openstack_networking_floatingip_associate_v2.instance_fip_association["${instance.name}-${port.fip_pool_name}"].floating_ip } : {},
             try(local.instance_admin_ip_address[instance.name], null) != null ? { ip_address_admin_port = local.instance_admin_ip_address[instance.name].ip_address } : {}
-          ) if try(volume.mountpoint, null) != null
+          ) if volume.create && try(volume.mountpoint, null) != null
         ]
       ]
     ]) : item
@@ -62,7 +62,7 @@ locals {
           try(bm.template_vars, null) != null ? { template_vars = bm.template_vars } : {},
           try(local.instance_admin_ip_address[instance.name], null) != null ? { ip_address_admin_port = local.instance_admin_ip_address[instance.name].ip_address } : {}
         )
-      ]
+      ] if try(instance.bind_mounts, null) != null
     ]) : item
   ]
 }
@@ -71,10 +71,11 @@ locals {
 locals {
   instance_details = [
     for instance in var.instances : merge({
-      hostname                 = instance.name
-      labels                   = instance.instance_labels
-      availability_zone        = openstack_compute_instance_v2.nodes["${instance.name}"].availability_zone
-      volume_availability_zone = openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone
+      hostname          = instance.name
+      labels            = instance.instance_labels
+      availability_zone = openstack_compute_instance_v2.nodes["${instance.name}"].availability_zone
+      #volume_availability_zone = try(openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone, data.openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone)
+      volume_availability_zone = try(openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone, instance.root_volume.az)
       ip_address_private       = local.instance_private_ip_address[instance.name].ip_address
       #instance_id              = openstack_compute_instance_v2.nodes["${instance.name}"].id
       },
