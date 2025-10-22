@@ -309,6 +309,7 @@ variable "instances" {
     name              = string
     az                = string
     flavor            = string
+    image             = optional(string)
     enable_admin_port = bool
     ports = list(object({
       name                 = string
@@ -322,13 +323,13 @@ variable "instances" {
         zone = string
       })))
     }))
-    root_volume = object({
+    root_volume = optional(object({
       name   = string
       size   = number
       az     = string
       image  = string
       create = bool
-    })
+    }))
     data_volumes = list(object({
       name       = string
       size       = number

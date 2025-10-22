@@ -105,6 +105,7 @@ resource "openstack_compute_instance_v2" "nodes" {
   for_each          = { for instance in var.instances : instance.name => instance }
   name              = each.key
   flavor_name       = each.value.flavor
+  image_name        = each.value.image
   availability_zone = each.value.az
 
   #  user_data = <<EOF
@@ -139,12 +140,15 @@ resource "openstack_compute_instance_v2" "nodes" {
     }
   }
 
-  block_device {
-    uuid                  = each.value.root_volume.create ? openstack_blockstorage_volume_v3.volumes-root[each.value.name].id : data.openstack_blockstorage_volume_v3.volumes-root[each.value.name].id
-    source_type           = "volume"
-    destination_type      = "volume"
-    boot_index            = 0
-    delete_on_termination = false
+  dynamic "block_device" {
+    for_each = each.value.image == null ? [each.value.root_volume] : []
+    content {
+      uuid                  = each.value.root_volume.create ? openstack_blockstorage_volume_v3.volumes-root[each.value.name].id : data.openstack_blockstorage_volume_v3.volumes-root[each.value.name].id
+      source_type           = "volume"
+      destination_type      = "volume"
+      boot_index            = 0
+      delete_on_termination = false
+    }
   }
 
 }

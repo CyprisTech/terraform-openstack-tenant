@@ -76,7 +76,7 @@ locals {
       labels             = instance.instance_labels
       availability_zone  = openstack_compute_instance_v2.nodes["${instance.name}"].availability_zone
       #volume_availability_zone = try(openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone, data.openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone)
-      volume_availability_zone = try(openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone, instance.root_volume.az)
+      volume_availability_zone = try(openstack_blockstorage_volume_v3.volumes-root["${instance.name}"].availability_zone, instance.root_volume.az, instance.az)
       ip_address_private       = local.instance_private_ip_address[instance.name].ip_address
       #instance_id              = openstack_compute_instance_v2.nodes["${instance.name}"].id
       },
