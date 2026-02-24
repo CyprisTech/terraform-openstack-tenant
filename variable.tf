@@ -322,6 +322,10 @@ variable "instances" {
         name = string
         zone = string
       })))
+      dns_records = optional(list(object({
+        name = string
+        zone = string
+      })))
     }))
     root_volume = optional(object({
       name   = string

@@ -238,3 +238,31 @@ resource "openstack_dns_recordset_v2" "instance_fip_recordset" {
   records     = [each.value.fip_address]
   depends_on  = [openstack_networking_floatingip_associate_v2.instance_fip_association]
 }
+
+resource "openstack_dns_recordset_v2" "instance_port_recordset" {
+  for_each = {
+    for item in flatten([
+      for instance in var.instances : [
+        for port in instance.ports : [
+          for record in port.dns_records : {
+            instance_name = instance.name
+            port_name     = port.name
+            record_name   = record.name
+            zone          = record.zone
+            port_address  = openstack_networking_port_v2.ports["${instance.name}-${port.name}"].all_fixed_ips[0]
+          }
+        ] if lookup(port, "dns_records", null) != null
+      ]
+    ]) : (item.record_name != "" ? "${item.record_name}.${item.zone}" : item.zone) => item
+  }
+  zone_id = try(
+    data.openstack_dns_zone_v2.zone[each.value.zone].id,
+    openstack_dns_zone_v2.zone[each.value.zone].id
+  )
+  name        = each.value.record_name != "" ? "${each.value.record_name}.${each.value.zone}" : each.value.zone
+  description = "DNS record ${each.value.record_name}.${each.value.zone} for ${each.value.instance_name} port"
+  ttl         = 3000
+  type        = "A"
+  records     = [each.value.port_address]
+  depends_on  = [openstack_networking_port_v2.ports]
+}
