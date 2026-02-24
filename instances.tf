@@ -225,14 +225,14 @@ resource "openstack_dns_recordset_v2" "instance_fip_recordset" {
           }
         ] if lookup(port, "fip_dns_records", null) != null
       ]
-    ]) : "${item.record_name}.${item.zone}" => item
+    ]) : (item.record_name != "" ? "${item.record_name}.${item.zone}" : item.zone) => item
   }
   zone_id = try(
     data.openstack_dns_zone_v2.zone[each.value.zone].id,
     openstack_dns_zone_v2.zone[each.value.zone].id
   )
-  name        = "${each.value.record_name}.${each.value.zone}"
-  description = "DNS record ${each.value.record_name}.${each.value.zone} for ${each.value.instance_name}"
+  name        = each.value.record_name != "" ? "${each.value.record_name}.${each.value.zone}" : each.value.zone
+  description = "DNS record ${each.value.record_name != "" ? "${each.value.record_name}.${each.value.zone}" : each.value.zone} for ${each.value.instance_name}"
   ttl         = 3000
   type        = "A"
   records     = [each.value.fip_address]
