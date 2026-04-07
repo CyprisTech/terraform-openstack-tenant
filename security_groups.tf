@@ -12,15 +12,26 @@ resource "openstack_networking_secgroup_v2" "sec_groups" {
 }
 
 resource "openstack_networking_secgroup_rule_v2" "sec_rules" {
-  for_each = { for sg in var.security_groups : sg.name => sg }
+  for_each = {
+    for r in flatten([
+      for sg in var.security_groups : [
+        for rule in sg.rules : {
+          key     = "${sg.name}-${index(sg.rules, rule)}"
+          sg_name = sg.name
+          rule    = rule
+        }
+      ]
+    ]) : r.key => r
+  }
 
-  security_group_id = openstack_networking_secgroup_v2.sec_groups[each.key].id
-  direction         = each.value.rules[0].direction
-  ethertype         = each.value.rules[0].ethertype
-  protocol          = try(each.value.rules[0].protocol)
-  port_range_min    = try(each.value.rules[0].port_min)
-  port_range_max    = try(each.value.rules[0].port_max)
-  remote_ip_prefix  = each.value.rules[0].remote_ip_prefix
+  security_group_id = openstack_networking_secgroup_v2.sec_groups[each.value.sg_name].id
+
+  direction         = each.value.rule.direction
+  ethertype         = each.value.rule.ethertype
+  protocol          = try(each.value.rule.protocol, null)
+  port_range_min    = try(each.value.rule.port_min, null)
+  port_range_max    = try(each.value.rule.port_max, null)
+  remote_ip_prefix  = try(each.value.rule.remote_ip_prefix, null)
 
   depends_on = [openstack_networking_secgroup_v2.sec_groups]
 }
