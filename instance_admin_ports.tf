@@ -20,12 +20,20 @@ resource "openstack_networking_port_v2" "provisioning" {
         openstack_networking_subnet_v2.subnets["provisioning-provisioning"].id
       )
 
-      security_group_ids = [
-        try(
-          openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id,
-          data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id
-        )
-      ]
+      security_group_ids = concat(
+        [
+          try(
+            openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id,
+            data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id
+          )
+        ],
+        instance.admin_port_egress ? [
+          try(
+            openstack_networking_secgroup_v2.sec_groups["admin-ssh-egress"].id,
+            data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-egress"].id
+          )
+        ] : []
+      )
     } if instance.enable_admin_port
   }
 

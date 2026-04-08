@@ -305,6 +305,7 @@ variable "instances" {
     flavor            = string
     image             = optional(string)
     enable_admin_port = bool
+    admin_port_egress = optional(bool, false)
     ports = list(object({
       name                 = string
       network_name         = string
