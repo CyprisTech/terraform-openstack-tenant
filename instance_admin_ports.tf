@@ -6,13 +6,13 @@
 ###########################################################
 
 resource "openstack_networking_port_v2" "provisioning" {
-  for_each          = {
+  for_each = {
     for instance in var.instances : instance.name => {
-      instance_name       = instance.name
-      name                = "${instance.name}-provisioning"
+      instance_name = instance.name
+      name          = "${instance.name}-provisioning"
 
       network_id = try(
-        data.openstack_networking_network_v2.network["provisioning"].id, 
+        data.openstack_networking_network_v2.network["provisioning"].id,
         openstack_networking_network_v2.networks["provisioning"].id
       )
       subnet_id = try(
@@ -20,21 +20,23 @@ resource "openstack_networking_port_v2" "provisioning" {
         openstack_networking_subnet_v2.subnets["provisioning-provisioning"].id
       )
 
-      security_group_ids  = [ 
+      security_group_ids = [
         try(
-          openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id,
-          data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id
+          #openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id,
+          #data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id
+          openstack_networking_secgroup_v2.sec_groups["default"].id,
+          data.openstack_networking_secgroup_v2.sec_groups["default"].id
         )
       ]
     } if instance.enable_admin_port
   }
 
-  name                = each.value.name
-  network_id          = each.value.network_id
+  name       = each.value.name
+  network_id = each.value.network_id
   fixed_ip {
-    subnet_id   = each.value.subnet_id
+    subnet_id = each.value.subnet_id
   }
 
-  admin_state_up      = true
-  security_group_ids  = each.value.security_group_ids
+  admin_state_up     = true
+  security_group_ids = each.value.security_group_ids
 }
