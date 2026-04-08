@@ -22,10 +22,8 @@ resource "openstack_networking_port_v2" "provisioning" {
 
       security_group_ids = [
         try(
-          #openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id,
-          #data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id
-          openstack_networking_secgroup_v2.sec_groups["default"].id,
-          data.openstack_networking_secgroup_v2.sec_groups["default"].id
+          openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id,
+          data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id
         )
       ]
     } if instance.enable_admin_port
