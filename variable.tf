@@ -262,10 +262,13 @@ variable "data" {
       name    = string
       subnets = list(string)
     }))
-    projects        = list(string)
-    project_zones   = list(string)
-    flavors         = list(string)
-    security_groups = list(string)
+    projects      = list(string)
+    project_zones = list(string)
+    flavors       = list(string)
+    security_groups = list(object({
+      name = string
+      id   = optional(string)
+    }))
   })
   default = {
     projects = []
@@ -282,16 +285,7 @@ variable "data" {
       "vcpu4_ram4G_nodisk",
       "vcpu4_ram8G_nodisk"
     ],
-    security_groups = ["intranet-https-ingress",
-      "intranet-ssh-ingress",
-      "intranet-smtps-ingress",
-      "intranet-smtp-starttls-ingress",
-      "intranet-imaps-ingress",
-      "public-http-ingress",
-      "public-https-ingress",
-      "public-smtp-ingress",
-      "admin-ssh-ingress",
-      "allow-all-traffic"
+    security_groups = [
     ]
     project_zones = []
   }

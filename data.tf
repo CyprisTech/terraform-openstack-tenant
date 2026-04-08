@@ -9,7 +9,7 @@
 
 data "openstack_dns_zone_v2" "zone" {
   for_each = {
-    for zone in var.data.project_zones : zone => { }
+    for zone in var.data.project_zones : zone => {}
   }
   name = each.key
 }
@@ -21,7 +21,7 @@ data "openstack_dns_zone_v2" "zone" {
 
 data "openstack_networking_network_v2" "network" {
   for_each = {
-    for network in var.data.networks : network.name => { }
+    for network in var.data.networks : network.name => {}
   }
   name = each.key
 }
@@ -31,15 +31,15 @@ data "openstack_networking_subnet_v2" "subnet" {
     for item in flatten([
       for network in var.data.networks : [
         for subnet in network.subnets : {
-          network_id  = data.openstack_networking_network_v2.network[network.name].id
+          network_id   = data.openstack_networking_network_v2.network[network.name].id
           network_name = network.name
-          subnet_name = subnet
+          subnet_name  = subnet
         }
       ]
-    ]): "${item.network_name}-${item.subnet_name}" => item
+    ]) : "${item.network_name}-${item.subnet_name}" => item
   }
-  name            = each.value.subnet_name
-  network_id      = each.value.network_id
+  name       = each.value.subnet_name
+  network_id = each.value.network_id
 }
 
 #########################
@@ -47,6 +47,7 @@ data "openstack_networking_subnet_v2" "subnet" {
 #########################
 
 data "openstack_networking_secgroup_v2" "sec_groups" {
-  for_each = { for sg in var.data.security_groups : sg => {} }
-  name        = each.key
+  for_each    = { for sg in var.data.security_groups : sg.name => sg }
+  name        = each.value.id == null ? each.value.name : null
+  secgroup_id = each.value.id
 }
