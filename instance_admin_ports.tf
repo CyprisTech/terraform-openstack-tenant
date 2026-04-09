@@ -25,6 +25,10 @@ resource "openstack_networking_port_v2" "provisioning" {
           try(
             openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id,
             data.openstack_networking_secgroup_v2.sec_groups["admin-ssh-ingress"].id
+          ),
+          try(
+            openstack_networking_secgroup_v2.sec_groups["dhcp-baseline"].id,
+            data.openstack_networking_secgroup_v2.sec_groups["dhcp-baseline"].id
           )
         ],
         instance.admin_port_egress ? [
