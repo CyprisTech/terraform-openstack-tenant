@@ -61,31 +61,29 @@ locals {
 
 locals {
   merged_user_data = { for instance in var.instances : instance.name => {
-
     runcmd = concat(
-      # coalesce(local.runcmd_init_volume[instance.name].cmds, []), # Creates cycle dependency instance -> local > instance (in locals{host_volume_mountpoint})
-      coalesce(var.cloud_init_common.runcmd, []),
-      coalesce(instance.cloud_init.runcmd, [])
+      coalesce(try(var.cloud_init_common.runcmd, null), []),
+      coalesce(try(instance.cloud_init.runcmd, null), [])
     )
 
     users = concat(
-      coalesce(var.cloud_init_common.users, []),
-      coalesce(instance.cloud_init.users, [])
+      coalesce(try(var.cloud_init_common.users, null), []),
+      coalesce(try(instance.cloud_init.users, null), [])
     )
 
     packages = concat(
-      coalesce(var.cloud_init_common.packages, []),
-      coalesce(instance.cloud_init.packages, [])
+      coalesce(try(var.cloud_init_common.packages, null), []),
+      coalesce(try(instance.cloud_init.packages, null), [])
     )
 
     network = concat(
-      coalesce(var.cloud_init_common.network, []),
-      coalesce(instance.cloud_init.network, [])
+      coalesce(try(var.cloud_init_common.network, null), []),
+      coalesce(try(instance.cloud_init.network, null), [])
     )
 
     write_files = concat(
-      coalesce(var.cloud_init_common.write_files, []),
-      coalesce(instance.cloud_init.write_files, [])
+      coalesce(try(var.cloud_init_common.write_files, null), []),
+      coalesce(try(instance.cloud_init.write_files, null), [])
     )
   } }
 }

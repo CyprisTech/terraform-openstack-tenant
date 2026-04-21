@@ -349,13 +349,14 @@ variable "instances" {
       conf_template_file = optional(string)
       template_vars      = optional(map(any))
     })))
-    cloud_init = optional(object({
-      runcmd      = optional(list(any))
-      users       = optional(list(any))
-      packages    = optional(list(any))
-      network     = optional(any)
-      write_files = optional(list(any))
-    }))
+    #cloud_init = optional(object({
+    #  runcmd      = optional(list(any))
+    #  users       = optional(list(any))
+    #  packages    = optional(list(any))
+    #  network     = optional(any)
+    #  write_files = optional(list(any))
+    #}))
+    cloud_init = optional(any)
   }))
   default = []
 }
