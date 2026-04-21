@@ -141,7 +141,7 @@ resource "openstack_compute_instance_v2" "nodes" {
   }
 
   dynamic "block_device" {
-    for_each = each.value.image == null ? [each.value.root_volume] : []
+    for_each = each.value.image == null && each.value.root_volume != null ? [each.value.root_volume] : []
     content {
       uuid                  = each.value.root_volume.create ? openstack_blockstorage_volume_v3.volumes-root[each.value.name].id : data.openstack_blockstorage_volume_v3.volumes-root[each.value.name].id
       source_type           = "volume"

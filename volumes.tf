@@ -5,10 +5,10 @@
 resource "openstack_blockstorage_volume_v3" "volumes-root" {
   for_each = {
     for instance in var.instances : instance.name => {
-      name  = instance.root_volume.name
-      size  = instance.root_volume.size
-      az    = instance.root_volume.az
-      image = instance.root_volume.image
+      name  = try(instance.root_volume.name, null)
+      size  = try(instance.root_volume.size, null)
+      az    = try(instance.root_volume.az, null)
+      image = try(instance.root_volume.image, null)
     } if instance.image == null && try(instance.root_volume.create, false)
   }
 
