@@ -15,7 +15,3 @@ data "openstack_identity_project_v3" "projects" {
   for_each = { for project in var.data.projects : project => {} }
   name = each.key
 }
-
-data "openstack_identity_role_v3" "admin" {
-  name = "admin"
-}
