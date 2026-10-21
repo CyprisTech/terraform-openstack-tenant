@@ -10,7 +10,7 @@
 
 ## Reporting a vulnerability
 
-**Do not open a public issue.** Report privately through GitHub's [private vulnerability reporting](https://github.com/CyprisTech/terraform-openstack-tenant/security/advisories/new).
+**Do not open a public issue.** Report privately through GitHub's [private vulnerability reporting](https://github.com/CyprisTech/terraform-openstack-tenant/security/advisories/new). If you cannot use it, email [opensource@cypris-tech.com](mailto:opensource@cypris-tech.com).
 
 Please include:
 
