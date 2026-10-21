@@ -13,5 +13,5 @@ resource "openstack_identity_project_v3" "projects" {
 
 data "openstack_identity_project_v3" "projects" {
   for_each = { for project in var.data.projects : project => {} }
-  name = each.key
+  name     = each.key
 }

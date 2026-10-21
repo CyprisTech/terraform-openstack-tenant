@@ -8,7 +8,7 @@ resource "openstack_identity_user_v3" "users" {
   name     = each.value.name
   password = each.value.password
   extra = {
-    email    = each.value.email
+    email = each.value.email
   }
   enabled = each.value.enabled
 }
