@@ -18,3 +18,5 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_tflint
+      - id: terraform_docs
+        args: [--hook-config=--path-to-file=README.md, --hook-config=--add-to-existing-file=true]

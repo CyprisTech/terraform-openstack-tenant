@@ -56,6 +56,19 @@ jobs:
       # fail the job; switch to warning once the refactor lands.
       - run: tflint --recursive --format compact --minimum-failure-severity=error
 
+  docs:
+    name: README reference up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: terraform-docs
+        run: |
+          curl -sSLo tfd.tgz https://github.com/terraform-docs/terraform-docs/releases/download/v0.24.0/terraform-docs-v0.24.0-linux-amd64.tar.gz
+          tar xzf tfd.tgz terraform-docs && rm tfd.tgz
+          ./terraform-docs .
+          rm terraform-docs
+          git diff --exit-code README.md
+
   secrets:
     name: gitleaks (full history)
     runs-on: ubuntu-latest
