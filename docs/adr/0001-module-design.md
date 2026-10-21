@@ -18,6 +18,12 @@ That module served as an **inventory of features**, not as a compatibility targe
 4. **Default values described one specific site**, and conventions were hard-coded (port naming, security group names).
 5. **Non-idempotent or surprising behaviours**: `mkfs` and `fstab` edits in cloud-init, `user_data` changes recreating every instance, security group rules indexed by position, roles forced to `admin`, DNS records silently written into every zone.
 
+## Options considered
+
+1. **Keep a single module for everything.** Simple to call, but mixes admin and project privileges in one state and one credential, and keeps the plan-time key problem.
+2. **One small module per resource type** (network, instance, load balancer...), composed by the caller. Common in the ecosystem, but the tenant is no longer described in one model: cross-references (ports to networks, members to instances) move into every caller's glue code.
+3. **Two public modules by privilege level, internal submodules by concern** (chosen). The caller writes one model per level; the internal split keeps the code maintainable without leaking into the interface.
+
 ## Decision
 
 ### D1. Two modules, two privilege levels, one repository
