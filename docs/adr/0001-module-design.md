@@ -1,10 +1,10 @@
 # ADR-0001: Module design
 
-- **Status:** Accepted
+- **Status:** Proposed
 - **Date:** 2026-10-21
 - **Deciders:** Gregory Gabrielian
 
-An *Architecture Decision Record* (ADR) captures one design decision, its context and its consequences.
+An *Architecture Decision Record* (ADR) captures one design decision, its context and its consequences. This ADR is revised in place until the first release; afterwards, changes go through new ADRs.
 
 ## Context
 
@@ -18,34 +18,62 @@ That module served as an **inventory of features**, not as a compatibility targe
 4. **Default values described one specific site**, and conventions were hard-coded (port naming, security group names).
 5. **Non-idempotent or surprising behaviours**: `mkfs` and `fstab` edits in cloud-init, `user_data` changes recreating every instance, security group rules indexed by position, roles forced to `admin`, DNS records silently written into every zone.
 
+Three guidelines from the Terraform ecosystem frame the decision:
+
+- Split modules along **encapsulation, privileges and volatility** (HashiCorp, *Module creation – recommended pattern*).
+- Prefer **dependency inversion**: a module receives the objects it depends on as inputs rather than looking them up (HashiCorp, *Module composition*).
+- A declarative, data-driven description of many resources works best as a **composition layer over small modules** (the *factory* pattern of Google's Cloud Foundation Fabric, the project and account factories of the major clouds), not as a monolith.
+
 ## Options considered
 
-1. **Keep a single module for everything.** Simple to call, but mixes admin and project privileges in one state and one credential, and keeps the plan-time key problem.
-2. **One small module per resource type** (network, instance, load balancer...), composed by the caller. Common in the ecosystem, but the tenant is no longer described in one model: cross-references (ports to networks, members to instances) move into every caller's glue code.
-3. **Two public modules by privilege level, internal submodules by concern** (chosen). The caller writes one model per level; the internal split keeps the code maintainable without leaking into the interface.
+1. **A single module for everything.** Simple to call, but mixes admin and project privileges, long-lived and short-lived resources, and grows an interface that is hard to document and to evolve.
+2. **Only small modules per concern**, composed by the caller. Reusable and well understood, but the tenant is no longer described in one model: cross-references (ports to networks, members to instances) move into every caller's glue code.
+3. **Small public building blocks, a thin composite tenant module on top, and a separate admin-level factory** (chosen). Callers who want one model use the composite; callers who need a different split use the building blocks directly. The same code serves both.
 
 ## Decision
 
-### D1. Two modules, two privilege levels, one repository
+### D1. Three layers, one repository
 
-- **`modules/cloud-baseline`** manages what requires the cloud `admin` role: projects, quotas, users, groups, role assignments, aggregates, flavors, images, provider and shared networks, a shared security group catalog, DNS zones.
-- **The root module (the tenant)** manages what lives *inside* one project: networks, routers, security groups, instances, volumes, ports, floating IPs, load balancers, DNS records. It runs with **project-scoped** credentials.
-- For labs, `project.create = true` lets the tenant module create its own project.
+| Layer | Path | Credentials | Purpose |
+|---|---|---|---|
+| **Building blocks** | `modules/network`, `modules/security-group`, `modules/instance`, `modules/loadbalancer`, `modules/dns` | project-scoped | One concern each, small typed interface, usable on their own |
+| **Tenant composite** | repository root | project-scoped | One declarative model for a tenant; resolves references by key and calls the building blocks |
+| **Cloud baseline** | `modules/cloud-baseline` | cloud `admin` | Projects, quotas, users, groups, role assignments, aggregates, flavors, images, provider and shared networks, shared security group catalog, DNS zones |
 
-### D2. Tenant input model
+- Building blocks are part of the public interface, documented and versioned like the composite.
+- For labs, the composite can create its project (`project.create = true`), which requires admin credentials.
+- Plain module calls cover volatility: a long-lived network layer and a short-lived compute layer can each have their own state, with the second receiving the first's outputs through `existing`.
 
-One object, with maps keyed by name everywhere. Fields marked `?` are optional.
+### D2. Adoption by injection
+
+Objects owned by another stack are passed **as values**, never only looked up inside the module:
+
+```hcl
+existing = {
+  networks        = { transit = { id = module.baseline.networks["transit"].id, subnets = { site-a = { id = "..." } } } }
+  security_groups = { ssh = { name = "baseline-ssh" } }        # a name is accepted too
+  dns_zones       = { public = { id = "..." } }
+}
+```
+
+- Every adopted object accepts `id` **or** `name`. With `id`, no lookup happens, so an object created in the same apply (by `cloud-baseline` or another module in the same root) can be adopted without a second plan. With `name`, a data source resolves it; the object must already exist.
+- Flavors and images follow the same rule (`flavor = "m1.small"` or `flavor_id = "..."`).
+- Volumes holding data are adopted with `existing = { id | name }` on the volume.
+
+### D3. Tenant input model
+
+One object, with maps keyed by name everywhere. Fields marked `?` are optional. HCL has no union types, so alternatives use a discriminator field (`source`, `kind`) checked by `validation` blocks.
 
 ```hcl
 tenant = {
-  project = { name = "demo", create? = false, description?, quotas? = {...} }  # quotas only when create
-  role_assignments? = { ops = { group? | user?, role = "member" } }            # only when create
+  project? = { create = false, name?, description?, quotas? = {...} }  # only for create = true; otherwise
+                                                                         # resources go to the provider's project
+  role_assignments? = { ops = { kind = "group", name = "demo-ops", role = "member" } }   # only with create = true
 
-  # Adoption: objects created elsewhere (cloud-baseline, another stack, the console)
-  existing? = {
-    networks        = { transit = { name = "transit", subnets = { site-a = "transit-site-a" } } }
-    security_groups = { ssh = { name = "baseline-ssh" }, legacy = { id = "..." } }
-    dns_zones       = { public = "demo.example.org." }
+  existing? = {                                              # see D2
+    networks        = { transit = { id? | name?, subnets = { site-a = { id? | name? } } } }
+    security_groups = { ssh = { id? | name? } }
+    dns_zones       = { public = { id? | name? } }
   }
 
   networks? = {
@@ -74,7 +102,7 @@ tenant = {
     web = {
       description?
       rules = { https-in = { direction = "ingress", ethertype? = "IPv4", protocol? = "tcp",
-                             port_min? = 443, port_max? = 443, remote_ip_prefix? | remote_group? } }
+                             port_min? = 443, port_max? = 443, remote_ip_prefix?, remote_group? } }
     }
   }
 
@@ -85,8 +113,9 @@ tenant = {
 
   instances? = {
     web-1 = {
-      flavor, az, image?                                     # flavors and images resolved by name
-      boot? = { source = "image" } | { source = "volume", size, volume_type?, existing? = false, name? }
+      flavor? | flavor_id?, az, image? | image_id?
+      boot? = { source = "image" }                           # or { source = "volume", size, volume_type? }
+                                                             # or { source = "existing", id? | name? }
       management_port? = true, management_egress? = false
       ports = {
         private = {
@@ -96,7 +125,7 @@ tenant = {
           dns? = [{ name = "www", zone = "internal" }]       # A record on the port IP
         }
       }
-      volumes? = { data = { size = 20, az?, volume_type?, existing? = false, name? } }
+      volumes? = { data = { size = 20, az?, volume_type? } } # or { existing = { id? | name? } }
       user_data? = module.cloudinit["web-1"].rendered
       labels? = ["edge"]                                     # exposed in outputs and metadata
       metadata? = {}
@@ -126,11 +155,13 @@ tenant = {
     records? = { mx = { zone = "public", name = "", type = "MX", records = ["10 mail.example.org."], ttl? } }
   }
 
-  defaults? = { ttl = 3000, ignore_user_data_changes = true }
+  defaults? = { ttl = 3000 }
 }
 ```
 
-### D3. `cloud-baseline` input model
+Each building block takes the matching slice of this model (for example, `modules/instance` takes one instance plus the resolved IDs of its networks and security groups).
+
+### D4. `cloud-baseline` input model
 
 ```hcl
 baseline = {
@@ -148,11 +179,11 @@ baseline = {
   users? = {
     alice = {
       email?, enabled? = true, default_project?
-      password? = { mode = "generate" }                      # "generate" | "input" | "none" (see D5)
+      password? = { mode = "generate" }                      # "generate" | "input" | "none" (see D6)
     }
   }
   groups?           = { ops = { description?, members? = ["alice"] } }
-  role_assignments? = { alice-demo = { user? | group?, project, role = "member" } }
+  role_assignments? = { alice-demo = { kind = "user", name = "alice", project = "demo", role = "member" } }
 
   aggregates? = { site-a = { zone = "site-a", hosts = ["..."], metadata? = {} } }
   flavors?    = { m1-small = { vcpus = 2, ram = 4096, disk = 16, ephemeral?, is_public? = true, extra_specs? = {} } }
@@ -171,71 +202,86 @@ baseline = {
     baseline-ssh = { description?, rules = { ... }, share_with? = ["*"] }  # sharing with all projects is explicit
   }
 
-  dns_zones? = { svc = { name = "svc.example.org.", email, ttl?, project? } }
+  dns_zones? = { svc = { name = "svc.example.org.", email, ttl?, project? } }  # project: owner of the zone
 }
 ```
 
-### D4. Stable keys: one plan, no `-target`
+Outputs expose the IDs of every created object, keyed like the input, so that tenants can adopt them by injection (D2).
 
-- Resources are keyed by **names from the input** (`"web-1.private"`, `"to-transit"`), **never by computed attributes**.
+### D5. Stable keys: one plan, no `-target`
+
+- `for_each` collections and keys come **only from the input**, never from attributes computed at apply time. Values passed to resources may be unknown at plan time; keys may not.
 - IP addresses are read from the port resource itself, never by filtering other resources on `device_id`.
-- Adopted objects (`existing`, `boot.existing`, `volumes.*.existing`) are data sources keyed like the resource they replace; each reference knows at plan time whether it points to an adopted or a created object.
 - Outputs have a **fixed shape**: no conditional `merge`, absent fields are `null`.
-- **Acceptance criterion:** on an empty project, `plan` succeeds in one pass, and the plan following `apply` is empty, with both OpenTofu and Terraform.
+- **Acceptance criterion:** on an empty project, `plan` succeeds in one pass, including when `cloud-baseline` and the tenant are applied from the same root, and the plan following `apply` is empty, with both OpenTofu and Terraform.
 
-### D5. Secrets: what the module does, and only that
+### D6. Secrets: what the modules do, and only that
 
-1. **No unnecessary secret.** The tenant module creates none; `cloud-baseline` creates user passwords only (and optional application credentials).
-2. **Three password modes:** `generate` (default: `random_password`, delivered once through a `sensitive` output, then `ignore_changes` so users can change it in Keystone without drift; rotation with `-replace`), `input` (provided by the caller in a separate `sensitive` map), `none` (federation, LDAP).
+1. **No unnecessary secret.** The tenant layers create none; `cloud-baseline` creates user passwords only (and optional application credentials).
+2. **Three password modes:** `generate` (default: `random_password`, delivered once through a `sensitive` output; Keystone never returns passwords, so a later change by the user causes no drift; rotation with `-replace`), `input` (provided by the caller in a separate `sensitive` map), `none` (federation, LDAP).
 3. **Every secret input and output is `sensitive`.** `sensitive` hides values from the CLI output, not from the state.
 4. **No secret in `user_data`**: cloud-init data is readable by the whole project through the metadata service.
 5. **Planned:** move to `ephemeral` variables and write-only attributes as soon as the OpenStack provider supports them; passwords will then leave the state.
 6. **No `backend` block, no provider configuration, no dependency** on any secret store, storage or CI tool.
 
-### D6. Operations are out of scope
+### D7. Operations are out of scope
 
-The module configures **no backend, no state encryption, no locking, no secret source and no execution pipeline** (CI, GitOps). These belong to the operator, in their root configuration. The module behaves the same with a manual `apply` or a full GitOps pipeline.
+The modules configure **no backend, no state encryption, no locking, no secret source and no execution pipeline** (CI, GitOps). These belong to the operator, in their root configuration. The modules behave the same with a manual `apply` or a full GitOps pipeline.
 
-### D7. No site-specific defaults
+### D8. Least privilege really works
 
-- No topological default values. `validation` blocks on CIDRs, names, protocols, methods and cross-references (a router's `external_network` must exist in `existing.networks`).
-- Conventions become options: `management_port`, shared security group catalog, default TTL.
+- Tenant layers need only a member role on their project. They never list or read projects: resources are created in the project of the provider's token.
+- DNS records can only be written in zones owned by the project (or shared with it, where Designate supports zone sharing). A `validation` rule and the documentation make this explicit; `cloud-baseline` can create a zone owned by a tenant (`project`).
+- Quotas and role assignments are admin operations: available only with `project.create = true` or in `cloud-baseline`.
 
-### D8. Predictable behaviour
+### D9. Predictable behaviour
 
-- `user_data` is an input, rendered by the `cloudinit-ubuntu` module of this repository (idempotent disk setup with `fs_setup` and `mounts`). **`ignore_user_data_changes = true` by default.**
-- `prevent_destroy` on boot and data volumes.
+- **`lifecycle` cannot be configured by a variable**, so behaviours are fixed and documented:
+  - `user_data` changes are ignored on existing instances (`ignore_changes = [user_data]`). To apply a new cloud-init, replace the instance explicitly (`-replace`).
+  - The modules set **no `prevent_destroy`**. Data that must survive belongs in volumes created outside the module (by the caller, who can protect them with their own `lifecycle`) and adopted with `existing`.
+- `user_data` is an input, rendered by `modules/cloudinit` with portable, idempotent cloud-init directives (`fs_setup`, `mounts`, `users`).
 - Security group rules keyed by name.
 - Octavia: `topology` is exposed; examples use TCP/HTTP health monitors; `PING` remains available.
 - Declared roles are applied as declared.
 
-### D9. Compatibility
+### D10. No site-specific defaults
+
+- No topological default values. `validation` blocks on CIDRs, names, protocols, methods, discriminator fields and cross-references (a router's `external_network` must exist in `existing.networks`).
+- Conventions become options: `management_port`, shared security group catalog, default TTL.
+
+### D11. Provider-neutral output contract
+
+The composite exposes outputs that upper layers (cluster bootstrap, configuration management, inventories) consume without knowing the cloud: instances with labels, ports, addresses and names; networks; load balancer endpoints; DNS names. The contract contains no OpenStack-specific notion and is specified in a separate ADR, so that equivalent projects for other clouds can implement it and be swapped in a composite deployment.
+
+### D12. Compatibility
 
 - **OpenTofu ≥ 1.6 and Terraform ≥ 1.6**, on equal footing. CI validates both tools at their lowest supported and latest versions. Test tooling may require newer versions; this does not constrain users.
 - Provider `terraform-provider-openstack/openstack ~> 3.x`.
 
-### D10. Repository layout
+### D13. Repository layout
 
 ```
 terraform-openstack-tenant/
-├── main.tf, variables.tf, outputs.tf, versions.tf   # tenant module (root)
+├── main.tf, variables.tf, outputs.tf, versions.tf   # tenant composite
 ├── modules/
-│   ├── cloud-baseline/
-│   ├── network/  security-group/  instance/  loadbalancer/  dns/
-│   └── cloudinit-ubuntu/
-├── examples/{lab-single-stack, baseline-plus-tenant, adopt-existing, public-edge}/
+│   ├── network/  security-group/  instance/  loadbalancer/  dns/   # public building blocks
+│   ├── cloud-baseline/                                            # admin-level factory
+│   └── cloudinit/
+├── examples/{lab-single-stack, baseline-plus-tenant, adopt-existing, layered-network-compute, public-edge, building-blocks}/
 ├── tests/
-└── docs/adr/
+└── docs/
 ```
 
 ## Consequences
 
 - No backward compatibility with the original module: input names and shapes are free. The code is rewritten in atomic commits on top of the original history.
-- Two state files are expected in a typical deployment (baseline, then one per tenant), with different privilege levels.
-- The state still contains generated passwords until the provider supports write-only attributes; protecting it is the operator's responsibility (D6).
+- Two levels of public interface (composite and building blocks) must be documented, tested and versioned together.
+- terraform-docs shows the composite as a single, deeply nested variable; a hand-written reference of the tenant model is required (`docs/tenant-model.md`).
+- Generated passwords stay in the state until the provider supports write-only attributes; protecting the state is the operator's responsibility (D7).
+- Applying a new cloud-init to a running instance is always an explicit replacement.
 
 ## Test strategy
 
-1. **Without a cloud, on every pull request:** `tofu test` and `terraform test` with mocked providers (key stability, validations, output shape, empty-project plan).
+1. **Without a cloud, on every pull request:** `tofu test` and `terraform test` with mocked providers (key stability, validations, output shape, empty-project plan, baseline and tenant in the same root).
 2. **`cloud-baseline` on a disposable DevStack:** it manages cloud-global objects (flavors, public images, aggregates, provider networks, users, RBAC) and must never be tested on a production cloud.
-3. **Tenant module on a real cloud:** a dedicated project with project-scoped application credentials; scenario `apply` → empty `plan` → `destroy`.
+3. **Tenant layers on a real cloud:** a dedicated project with project-scoped application credentials; scenario `apply` → empty `plan` → `destroy`.

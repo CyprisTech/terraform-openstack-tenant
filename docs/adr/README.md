@@ -1,10 +1,10 @@
 # Architecture decision records
 
-An architecture decision record (ADR) captures one significant design decision: its context, the decision itself and its consequences. ADRs are immutable once accepted; a later decision that changes an earlier one supersedes it with a new ADR.
+An architecture decision record (ADR) captures one significant design decision: its context, the decision itself and its consequences. Until the first release, ADRs are revised in place. Once an implementation has been released, an ADR is no longer edited: a later decision supersedes it with a new ADR.
 
 | ADR | Title | Status |
 |---|---|---|
-| [0001](0001-module-design.md) | Module design | Accepted |
+| [0001](0001-module-design.md) | Module design | Proposed |
 
 ## Writing an ADR
 

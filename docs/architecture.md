@@ -2,19 +2,19 @@
 
 This document explains how the modules are organised and the rules that make them predictable. The decisions behind it are recorded in [ADR-0001](adr/0001-module-design.md).
 
-## Two privilege levels
+## Three layers
 
-OpenStack separates what a cloud administrator controls from what a project member controls. The modules follow the same line, so that day-to-day tenant changes never require admin credentials.
+| | Building blocks | Tenant composite | `modules/cloud-baseline` |
+|---|---|---|---|
+| **Path** | `modules/network`, `security-group`, `instance`, `loadbalancer`, `dns` | repository root | `modules/cloud-baseline` |
+| **Credentials** | Scoped to one project | Scoped to one project | Cloud `admin` role |
+| **Interface** | Small, one concern | One object describing the tenant | One object describing the cloud baseline |
+| **Manages** | One kind of resource and what it strictly needs | Everything inside a project, by calling the building blocks | Projects, quotas, users, groups, role assignments, aggregates, flavors, images, provider and shared networks, shared security group catalog, DNS zones |
+| **Use it when** | You want your own split or only part of the features | You want one model per tenant | You administer the cloud |
 
-| | `modules/cloud-baseline` | Root module (tenant) |
-|---|---|---|
-| **Credentials** | Cloud `admin` role | Scoped to one project (user or application credential) |
-| **Scope** | Whole cloud | One project |
-| **Manages** | Projects, quotas, users, groups, role assignments, aggregates, flavors, images, provider and shared networks, shared security group catalog, DNS zones | Networks, subnets, routers, security groups, instances, ports, volumes, floating IPs, load balancers, DNS records |
-| **Typical cadence** | Rarely (onboarding, capacity changes) | Often (new instance, new service) |
-| **State** | One | One per tenant |
+The split follows the usual criteria for Terraform modules: **encapsulation** (one concern per building block), **privileges** (admin versus project) and **volatility** (long-lived networks versus short-lived instances can live in separate states, see below).
 
-For labs, the tenant module can create its own project (`project.create = true`) and run with admin credentials in a single stack.
+For labs, the composite can create its own project (`project.create = true`) and run with admin credentials in a single stack.
 
 ## The input model
 
@@ -31,28 +31,47 @@ Compared with lists, maps mean that adding or removing an element never shifts t
 
 Objects reference each other **by key**: a port names its `network` and `subnet`, a router names its `external_network`, a load balancer pool lists `members` as `"<instance>.<port>"`. Validation rules reject references to keys that do not exist.
 
-## Adoption of existing objects
+## Adoption by injection
 
-A tenant usually relies on objects it does not own: shared networks, a security group catalog, DNS zones, sometimes volumes holding data. They are declared under `existing` (or with `existing = true` on a volume) and resolved with data sources:
+A tenant usually relies on objects it does not own: shared networks, a security group catalog, DNS zones, sometimes volumes holding data. They are declared under `existing` (or with `existing` on a volume), **by ID or by name**:
+
+```hcl
+existing = {
+  networks        = { transit = { id = module.baseline.networks["transit"].id, subnets = { site-a = { id = module.baseline.subnets["transit/site-a"].id } } } }
+  security_groups = { ssh = { name = "baseline-ssh" } }
+}
+```
 
 ```mermaid
 flowchart LR
-    subgraph existing["existing = { ... }  (data sources)"]
-        N["networks.transit"]
-        S["security_groups.ssh"]
-        Z["dns_zones.public"]
+    subgraph existing["existing = { ... }"]
+        N["networks.transit<br/>id injected"]
+        S["security_groups.ssh<br/>name looked up"]
     end
     subgraph created["created by the module"]
         R["routers.out"]
         P["ports web-1.main"]
-        D["records www"]
     end
     N --> R
     S --> P
-    Z --> D
 ```
 
-The same key namespace is used for adopted and created objects, so a reference does not need to know where an object comes from. Each key is resolved at plan time to exactly one of the two.
+- **By ID**, nothing is looked up: the object may even be created in the same apply, by `cloud-baseline` or another module of the same root configuration.
+- **By name**, a data source resolves the object at plan time: it must already exist.
+
+Adopted and created objects share the same key namespace, so a reference does not need to know where an object comes from.
+
+### Separating volatile layers
+
+Calling the composite twice, once for networks and once for instances, gives each layer its own state. The compute layer adopts the network layer's outputs through `existing`. Changes to instances then never touch the networks' state.
+
+## Least privilege
+
+Tenant layers need only a member role on their project:
+
+- they never list or read projects; resources are created in the project of the provider's credentials;
+- DNS records can only be written in zones owned by the project (or shared with it); `cloud-baseline` can create a zone owned by a tenant;
+- quotas and role assignments are admin operations, available in `cloud-baseline` or with `project.create = true`.
 
 ## One plan, no `-target`
 
@@ -81,6 +100,15 @@ module.tenant.instances = {
 
 `networks`, `subnets`, `security_groups`, `load_balancers` and `dns_zones` follow the same rule. Consume them through remote state or data sources; the modules contain no SSH provisioner.
 
+The output shape is meant to be **provider-neutral**: it contains no OpenStack-specific notion, so that equivalent modules for other clouds can expose the same contract and be swapped below the same upper layers. The contract will be specified in its own ADR.
+
+## Lifecycle rules
+
+Terraform does not allow `lifecycle` settings to depend on variables, so the modules fix them and document them:
+
+- **`user_data` changes are ignored** on existing instances. To apply a new cloud-init, replace the instance explicitly: `tofu apply -replace='module.tenant.module.instance["web-1"].openstack_compute_instance_v2.this'`.
+- **No `prevent_destroy`.** Create volumes that must survive outside the module, protect them with your own `lifecycle { prevent_destroy = true }`, and adopt them with `existing`.
+
 ## Instance bootstrap
 
-`user_data` is an input. `modules/cloudinit-ubuntu` renders it from a typed description of disks, mounts, users and packages, using cloud-init's own idempotent directives (`fs_setup`, `mounts`) rather than shell commands. By default, a change to `user_data` does not replace a running instance (`ignore_user_data_changes = true`).
+`user_data` is an input. `modules/cloudinit` renders it from a typed description of disks, mounts, users and packages, using cloud-init's own idempotent directives (`fs_setup`, `mounts`, `users`) rather than shell commands.

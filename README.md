@@ -38,10 +38,11 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 | **Load balancing** | Octavia load balancers, listeners, pools, members, health monitors, topology, floating IP |
 | **DNS** | Designate zones, records on ports and floating IPs, free-form records |
 | **Bootstrap** | Idempotent cloud-init rendering (disks, mounts, users, packages) as a separate module |
+| **Composition** | Building blocks usable alone; a provider-neutral output contract for upper layers |
 
 ## How it works
 
-The repository separates **cloud administration** from **tenant management**, because they require different privileges:
+The repository has three layers. **Building blocks** handle one concern each and can be used alone; the **tenant composite** describes a whole tenant in one model and calls them; **cloud-baseline** handles what requires cloud administrator privileges:
 
 ```mermaid
 flowchart LR
@@ -49,20 +50,22 @@ flowchart LR
         B["modules/cloud-baseline<br/>projects · quotas · users · roles<br/>flavors · images · aggregates<br/>provider networks · SG catalog · DNS zones"]
     end
     subgraph tenant["Tenant operator · project-scoped credentials"]
-        T["root module (tenant)<br/>networks · routers · security groups<br/>instances · volumes · floating IPs<br/>load balancers · DNS records"]
-        C["modules/cloudinit-ubuntu<br/>user_data"]
+        T["tenant composite (root)<br/>one model per tenant"]
+        BB["building blocks<br/>network · security-group · instance<br/>loadbalancer · dns"]
+        C["modules/cloudinit<br/>user_data"]
+        T --> BB
     end
-    B -- "creates project,<br/>shared networks, SG catalog" --> T
-    T -. "adopts via existing = {...}" .-> B
+    B -- "IDs injected through existing = {...}" --> T
     C -- "rendered user_data" --> T
-    T -- "fixed-shape outputs" --> U["Upper layers<br/>(Kubernetes, Swarm, Ansible...)"]
+    T -- "provider-neutral outputs" --> U["Upper layers<br/>(Kubernetes, Swarm, Ansible...)"]
 ```
 
 Three principles drive the design (details in [docs/architecture.md](docs/architecture.md)):
 
 1. **One plan, no `-target`.** Every resource is keyed by a name from the input, never by an ID computed at apply time. A new project plans in one pass, and the plan after `apply` is empty.
-2. **Adopt, don't duplicate.** Objects owned by another stack are referenced through `existing`, resolved by name or ID.
-3. **No operational opinion.** The modules contain no backend, no provider configuration and no dependency on a secret store or CI system. See [Operating the module](#operating-the-module).
+2. **Adopt by injection.** Objects owned by another stack are passed to `existing` by ID (or looked up by name when they already exist), so even objects created in the same apply can be adopted.
+3. **Least privilege.** Tenant layers run with a member role on their project and never need to read other projects.
+4. **No operational opinion.** The modules contain no backend, no provider configuration and no dependency on a secret store or CI system. See [Operating the module](#operating-the-module).
 
 ## Usage
 
@@ -98,8 +101,8 @@ module "tenant" {
   source = "github.com/CyprisTech/terraform-openstack-tenant?ref=v0.1.0"
 
   tenant = {
-    project  = { name = "demo" }
-    existing = { networks = { transit = { name = "transit", subnets = { site-a = "site-a" } } } }
+    # resources are created in the project of the provider's credentials
+    existing = { networks = { transit = { name = "transit", subnets = { site-a = { name = "site-a" } } } } }
 
     networks = {
       app = {
@@ -143,6 +146,8 @@ Examples are added with the modules they exercise (see [Roadmap](#roadmap)):
 | `examples/lab-single-stack` | One stack creating its own project, for labs and evaluation |
 | `examples/baseline-plus-tenant` | The two privilege levels, one state each |
 | `examples/adopt-existing` | Adoption of shared networks, security groups, zones and volumes |
+| `examples/layered-network-compute` | Network and compute layers in separate states, connected through `existing` |
+| `examples/building-blocks` | The building blocks used directly, without the composite |
 | `examples/public-edge` | Octavia in front of reverse proxies, PROXY protocol, DNS on the floating IP |
 
 ## Requirements and compatibility
@@ -174,11 +179,11 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 |---|---|---|
 | 1 | Repository skeleton, CI, documentation | in review |
 | 2 | `modules/cloud-baseline` with mocked tests | planned |
-| 3 | Tenant networks and security groups, `existing` | planned |
-| 4 | Instances, ports, management port, volumes, floating IPs, DNS | planned |
-| 5 | `modules/cloudinit-ubuntu` | planned |
+| 3 | Building blocks `network` and `security-group`, adoption by injection | planned |
+| 4 | Building block `instance`: ports, management port, volumes, floating IPs, DNS | planned |
+| 5 | `modules/cloudinit` | planned |
 | 6 | Load balancers and DNS | planned |
-| 7 | Root module, examples, single-plan and empty-plan tests on both tools | planned |
+| 7 | Tenant composite, output contract, examples, single-plan and empty-plan tests on both tools | planned |
 | 8 | Documentation pass, `v0.1.0` | planned |
 
 ## Reference
