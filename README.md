@@ -36,7 +36,7 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 | **Compute** | Instances from image or volume, named ports, optional management port on a dedicated network, data volumes, labels and metadata |
 | **Adoption** | Existing networks, subnets, security groups, DNS zones, boot and data volumes |
 | **Load balancing** | Octavia load balancers, listeners, pools, members, health monitors, topology, floating IP |
-| **DNS** | Designate zones, records on ports and floating IPs, free-form records |
+| **DNS** | Designate zones owned by a tenant or shared with several, records on ports and floating IPs, free-form records |
 | **Bootstrap** | Idempotent cloud-init rendering (disks, mounts, users, packages) as a separate module |
 | **Composition** | Building blocks usable alone; a provider-neutral output contract for upper layers |
 
@@ -156,7 +156,7 @@ Examples are added with the modules they exercise (see [Roadmap](#roadmap)):
 |---|---|---|
 | OpenTofu | >= 1.6 | 1.6.3 and latest |
 | Terraform | >= 1.6 | 1.6.6 and latest |
-| Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.0` from `v0.1.0` (pre-release code: `~> 1.53`) | pinned minimum and latest |
+| Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` from `v0.1.0` (pre-release code: `~> 1.53`) | pinned minimum and latest |
 | OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | DevStack (integration tests, planned) |
 
 ## Operating the module

@@ -70,7 +70,7 @@ Calling the composite twice, once for networks and once for instances, gives eac
 Tenant layers need only a member role on their project:
 
 - they never list or read projects; resources are created in the project of the provider's credentials;
-- DNS records can only be written in zones owned by the project (or shared with it); `cloud-baseline` can create a zone owned by a tenant;
+- DNS records can only be written in zones owned by the project or shared with it. `cloud-baseline` either creates a zone **for** a tenant (`project`) or keeps it and **shares** it (`share_with`). Zones are never transferred after creation: a transfer hides the zone from the stack that created it;
 - quotas and role assignments are admin operations, available in `cloud-baseline` or with `project.create = true`.
 
 ## One plan, no `-target`

@@ -202,9 +202,18 @@ baseline = {
     baseline-ssh = { description?, rules = { ... }, share_with? = ["*"] }  # sharing with all projects is explicit
   }
 
-  dns_zones? = { svc = { name = "svc.example.org.", email, ttl?, project? } }  # project: owner of the zone
+  dns_zones? = {
+    demo     = { name = "demo.example.org.", email, ttl?, project = "demo" }               # owned by a tenant
+    services = { name = "svc.example.org.", email, ttl?, share_with = ["demo", "other"] }   # kept by admin, shared
+  }
 }
 ```
+
+DNS zones are never transferred between projects after creation. A zone transfer changes the owner behind the state's back: the creating stack can no longer read the zone and fails or tries to recreate it. Instead:
+
+- **A zone dedicated to a tenant** is created **for** that project (`project`): the provider sends `X-Auth-Sudo-Tenant-ID`, so the baseline stack keeps reading the zone while the tenant owns it and manages its records. The user running the baseline needs a role in the target project.
+- **A zone used by several tenants** stays owned by the administrator and is shared with each target project (`share_with`, Designate zone sharing, provider >= 3.2). Each tenant writes its own records.
+- `project` and `share_with` are mutually exclusive (validation).
 
 Outputs expose the IDs of every created object, keyed like the input, so that tenants can adopt them by injection (D2).
 
@@ -231,7 +240,7 @@ The modules configure **no backend, no state encryption, no locking, no secret s
 ### D8. Least privilege really works
 
 - Tenant layers need only a member role on their project. They never list or read projects: resources are created in the project of the provider's token.
-- DNS records can only be written in zones owned by the project (or shared with it, where Designate supports zone sharing). A `validation` rule and the documentation make this explicit; `cloud-baseline` can create a zone owned by a tenant (`project`).
+- DNS records can only be written in zones owned by the project or shared with it. `cloud-baseline` creates tenant-owned zones (`project`) or shares administrator-owned zones (`share_with`); see D4. Zone transfers are not used.
 - Quotas and role assignments are admin operations: available only with `project.create = true` or in `cloud-baseline`.
 
 ### D9. Predictable behaviour
@@ -256,7 +265,7 @@ The composite exposes outputs that upper layers (cluster bootstrap, configuratio
 ### D12. Compatibility
 
 - **OpenTofu ≥ 1.6 and Terraform ≥ 1.6**, on equal footing. CI validates both tools at their lowest supported and latest versions. Test tooling may require newer versions; this does not constrain users.
-- Provider `terraform-provider-openstack/openstack ~> 3.x`.
+- Provider `terraform-provider-openstack/openstack ~> 3.2` (zone sharing).
 
 ### D13. Repository layout
 
@@ -284,4 +293,4 @@ terraform-openstack-tenant/
 
 1. **Without a cloud, on every pull request:** `tofu test` and `terraform test` with mocked providers (key stability, validations, output shape, empty-project plan, baseline and tenant in the same root).
 2. **`cloud-baseline` on a disposable DevStack:** it manages cloud-global objects (flavors, public images, aggregates, provider networks, users, RBAC) and must never be tested on a production cloud.
-3. **Tenant layers on a real cloud:** a dedicated project with project-scoped application credentials; scenario `apply` → empty `plan` → `destroy`.
+3. **Tenant layers on a real cloud:** a dedicated project with project-scoped application credentials; scenario `apply` → empty `plan` → `destroy`. DNS cases: records in a tenant-owned zone and in a shared zone, lookup of a shared zone by name from the target project, behaviour when the owner deletes a shared zone that contains records of other projects.
