@@ -51,6 +51,9 @@ These rules come from [ADR-0001](docs/adr/0001-module-design.md):
 - **No site-specific defaults.** Defaults must be valid on any OpenStack cloud. Add `validation` blocks for formats and cross-references.
 - **Secrets.** Mark every secret input and output `sensitive`. Never put secrets in `user_data`, examples or tests.
 - **Typed variables.** Use `object({...})` with `optional()` attributes and a `description` on every variable and output.
+- **Documentation in code.**
+  - Every variable and output has a `description`; for object types, the description explains each attribute (the type alone does not say what a field means). TFLint enforces it.
+  - Comments explain **why**, only where the code would surprise a reader: fixed `lifecycle` rules, how `for_each` keys are built, provider workarounds, privilege-related headers. Do not paraphrase what the HCL already says.
 - **Formatting.** `tofu fmt`; two-space indentation; files named by concern (`networks.tf`, `instances.tf`...).
 
 ## Commits
