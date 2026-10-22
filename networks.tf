@@ -8,11 +8,11 @@
 resource "openstack_networking_network_v2" "networks" {
   for_each = { for net in var.networks : net.name => net }
 
-  name             = each.value.name
-  mtu              = each.value.mtu
+  name                    = each.value.name
+  mtu                     = each.value.mtu
   availability_zone_hints = each.value.az_hints
-  admin_state_up   = each.value.admin_state_up
-  external         = each.value.external
+  admin_state_up          = each.value.admin_state_up
+  external                = each.value.external
 
   dynamic "segments" {
     for_each = (lookup(each.value, "physnet", null) != null ? [1] : [])
@@ -34,11 +34,11 @@ resource "openstack_networking_subnet_v2" "subnets" {
     for item in flatten([
       for network in var.networks : [
         for subnet in network.subnets : {
-          net_name = network.name
-          subnet_name = subnet.name
-          network_id = openstack_networking_network_v2.networks[network.name].id
-          ip_version = subnet.ip_version
-          cidr = subnet.cidr
+          net_name         = network.name
+          subnet_name      = subnet.name
+          network_id       = openstack_networking_network_v2.networks[network.name].id
+          ip_version       = subnet.ip_version
+          cidr             = subnet.cidr
           gateway_ip       = lookup(subnet, "gateway_ip", null)
           nameservers      = lookup(subnet, "nameservers", null)
           allocation_pools = lookup(subnet, "allocation_pools", [])
@@ -74,20 +74,20 @@ resource "openstack_networking_subnet_route_v2" "subnet_routes" {
   for_each = {
     for item in flatten([
       for network in var.networks : [
-        for subnet in network.subnets : [ 
+        for subnet in network.subnets : [
           for route in subnet.extra_routes != null ? subnet.extra_routes : [] : {
-            net_name = network.name        
-            subnet_name = subnet.name        
-            route = route
+            net_name    = network.name
+            subnet_name = subnet.name
+            route       = route
           }
         ]
       ]
     ]) : "${item.subnet_name}-${item.route.to}" => item
   }
 
-  subnet_id = openstack_networking_subnet_v2.subnets["${each.value.net_name}-${each.value.subnet_name}"].id
+  subnet_id        = openstack_networking_subnet_v2.subnets["${each.value.net_name}-${each.value.subnet_name}"].id
   destination_cidr = each.value.route.to
-  next_hop     = each.value.route.via
+  next_hop         = each.value.route.via
 
   depends_on = [openstack_networking_subnet_v2.subnets]
 }

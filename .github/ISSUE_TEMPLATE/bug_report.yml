@@ -1,0 +1,58 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Remove credentials, addresses and real names** from everything you paste.
+        Security issues must be reported privately (see SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Module version
+      description: Tag or commit used in `source`.
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Tool
+      options: [OpenTofu, Terraform]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Tool and provider versions
+      description: Output of `tofu version` or `terraform version`.
+    validations:
+      required: true
+  - type: input
+    id: openstack
+    attributes:
+      label: OpenStack release and distribution
+      placeholder: 2025.1, OpenStack-Ansible / Kolla / DevStack / vendor
+  - type: textarea
+    id: config
+    attributes:
+      label: Minimal configuration
+      description: The smallest module call that reproduces the problem.
+      render: hcl
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Include the relevant part of the plan or the error message.
+      render: text
+    validations:
+      required: true

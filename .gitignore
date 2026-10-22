@@ -1,3 +1,31 @@
+# Local .terraform directories and lock files (this repository is a module)
+**/.terraform/*
+.terraform.lock.hcl
+
+# State files: never commit them, they may contain secrets
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.json
+
+# Variable files may contain secrets; examples use *.tfvars.example
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Override files and crash logs
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+crash.log
+crash.*.log
+
+# CLI configuration
+.terraformrc
+terraform.rc
+
+# Editors
 .*.sw*
-.terraform*
-*.tfstate*
+.idea/
+.vscode/
