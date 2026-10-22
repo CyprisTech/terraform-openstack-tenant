@@ -8,13 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Specification of the `v0.1.0` interface: the composite's `tenant` variable with validation rules, a hand-written tenant model reference (`docs/tenant-model.md`) and six examples (`examples/`).
 - Repository skeleton: Apache-2.0 license, `.gitignore` blocking state, plan and `tfvars` files, EditorConfig, TFLint and pre-commit configuration (gitleaks, fmt, tflint, terraform-docs).
 - CI on GitHub Actions: `fmt`, `init` and `validate` on OpenTofu and Terraform (lowest supported and latest), TFLint, gitleaks over the full history, Trivy configuration scan, README reference check. Actions pinned by commit SHA; Dependabot updates.
 - Documentation rules for code (descriptions on every variable and output, enforced by TFLint; comments explain why).
 - Documentation: README, architecture guide, operations guide, ADR-0001 (module design), contribution guide, Code of Conduct, security policy, support page, issue and pull request templates.
 
-### Changed
+### Removed
 
-- Existing code formatted with `tofu fmt` (no behaviour change).
+- The pre-redesign code; it remains available in the history.
 
 [Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/commits/main
