@@ -56,6 +56,39 @@ jobs:
       # --recursive and to --minimum-failure-severity=warning once the
       # building blocks exist.
       - run: tflint --format compact --minimum-failure-severity=error
+      - name: tflint (modules, warnings fail)
+        run: |
+          for d in modules/*/; do
+            echo "::group::$d"
+            tflint --chdir="$d" --config="$PWD/.tflint.hcl" --format compact
+            echo "::endgroup::"
+          done
+
+  test:
+    name: test (${{ matrix.tool }}, mocked providers)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Mocked providers need OpenTofu >= 1.8 or Terraform >= 1.7.
+        tool: [tofu, terraform]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - if: matrix.tool == 'tofu'
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: latest
+          tofu_wrapper: false
+
+      - if: matrix.tool == 'terraform'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: latest
+          terraform_wrapper: false
+
+      - run: ${{ matrix.tool }} init -backend=false -input=false
+      - run: ${{ matrix.tool }} test
 
   docs:
     name: README reference up to date
@@ -67,8 +100,9 @@ jobs:
           curl -sSLo tfd.tgz https://github.com/terraform-docs/terraform-docs/releases/download/v0.24.0/terraform-docs-v0.24.0-linux-amd64.tar.gz
           tar xzf tfd.tgz terraform-docs && rm tfd.tgz
           ./terraform-docs .
+          for d in modules/*/; do ./terraform-docs markdown table --indent 2 --output-file README.md --output-mode inject "$d"; done
           rm terraform-docs
-          git diff --exit-code README.md
+          git diff --exit-code -- README.md modules/
 
   secrets:
     name: gitleaks (full history)

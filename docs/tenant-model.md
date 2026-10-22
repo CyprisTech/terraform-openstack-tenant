@@ -246,11 +246,11 @@ The building blocks take **IDs** instead of keys: wiring them together is the ca
 
 | Module | Main inputs | Main outputs |
 |---|---|---|
-| `modules/network` | `name`, `mtu`, `subnets` (as above), `routers` with `external_network_id`, `external_subnet_id`, `internal_subnet` | `id`, `subnets` |
-| `modules/security-group` | `name`, `description`, `rules` with `remote_group_id` instead of `remote_group` | `id` |
+| [`modules/network`](../modules/network) ✅ | `name`, `project_id`, `mtu`, `subnets` (as above), `routers` with `external_network_id`, `external_subnet_id`, `external_ip`, `internal_subnet`, `internal_ip`, `advertise_routes` | `id`, `name`, `subnets`, `routers` |
+| [`modules/security-group`](../modules/security-group) ✅ | `name`, `description`, `project_id`, `delete_default_rules`, `rules` with `remote_group_id` (an ID, or `"self"`) instead of `remote_group` | `id`, `name`, `rule_ids` |
 | `modules/instance` | `name`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `security_group_ids`, `floating_ip`, `dns` with `zone_id`; `volumes`; `user_data`; `metadata` | `id`, `ports` |
 | `modules/loadbalancer` | `name`, `vip` with `subnet_id`, `topology`, `floating_ip`, `listeners` with members as `{ address, subnet_id }` | `id`, `vip`, `floating_ip` |
 | `modules/dns` | `zones`, `records` with `zone_id` | `zones` |
 | `modules/cloudinit` | `hostname`, `users`, `disks`, `packages` | `rendered` |
 
-Exact inputs are documented in each module's README as it is implemented.
+✅ = implemented. Exact inputs are documented in each module's README.
