@@ -18,6 +18,8 @@ That module served as an **inventory of features**, not as a compatibility targe
 4. **Default values described one specific site**, and conventions were hard-coded (port naming, security group names).
 5. **Non-idempotent or surprising behaviours**: `mkfs` and `fstab` edits in cloud-init, `user_data` changes recreating every instance, security group rules indexed by position, roles forced to `admin`, DNS records silently written into every zone.
 
+**Audience.** Reusable OpenStack Terraform material today consists of provider tutorials, examples published by public clouds and per-resource module collections; no maintained module describes a whole tenant with adoption of existing objects (GCP's project factory has no OpenStack equivalent). The primary audience is therefore **teams consuming OpenStack clouds without admin rights**, notably the European public and sovereign OpenStack clouds. Operators of private clouds, who usually already have their own tooling, are a secondary audience served by `cloud-baseline`.
+
 Three guidelines from the Terraform ecosystem frame the decision:
 
 - Split modules along **encapsulation, privileges and volatility** (HashiCorp, *Module creation – recommended pattern*).
@@ -42,6 +44,8 @@ Three guidelines from the Terraform ecosystem frame the decision:
 
 - Building blocks are part of the public interface, documented and versioned like the composite.
 - For labs, the composite can create its project (`project.create = true`), which requires admin credentials.
+- **Release order follows the audience:** `v0.1.0` delivers the tenant layers (building blocks and composite); `cloud-baseline` follows in `v0.2.0`.
+- **Portability across OpenStack clouds:** clouds differ in available services and policies. Octavia and Designate are optional: the composite works without them, and nothing assumes a specific deployment tool or vendor.
 - Plain module calls cover volatility: a long-lived network layer and a short-lived compute layer can each have their own state, with the second receiving the first's outputs through `existing`.
 
 ### D2. Adoption by injection
@@ -293,4 +297,4 @@ terraform-openstack-tenant/
 
 1. **Without a cloud, on every pull request:** `tofu test` and `terraform test` with mocked providers (key stability, validations, output shape, empty-project plan, baseline and tenant in the same root).
 2. **`cloud-baseline` on a disposable DevStack:** it manages cloud-global objects (flavors, public images, aggregates, provider networks, users, RBAC) and must never be tested on a production cloud.
-3. **Tenant layers on a real cloud:** a dedicated project with project-scoped application credentials; scenario `apply` → empty `plan` → `destroy`. DNS cases: records in a tenant-owned zone and in a shared zone, lookup of a shared zone by name from the target project, behaviour when the owner deletes a shared zone that contains records of other projects.
+3. **Tenant layers on real clouds, at least two different ones** (a private cloud and a public OpenStack cloud), including one without Octavia or Designate: a dedicated project with project-scoped application credentials; scenario `apply` → empty `plan` → `destroy`. DNS cases: records in a tenant-owned zone and in a shared zone, lookup of a shared zone by name from the target project, behaviour when the owner deletes a shared zone that contains records of other projects.

@@ -5,7 +5,7 @@
 [![OpenTofu >= 1.6](https://img.shields.io/badge/OpenTofu-%3E%3D1.6-ffda18?logo=opentofu)](https://opentofu.org)
 [![Terraform >= 1.6](https://img.shields.io/badge/Terraform-%3E%3D1.6-844fba?logo=terraform)](https://www.terraform.io)
 
-OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**: networks, routers, security groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects created elsewhere (shared networks, security group catalogs, DNS zones, volumes) can be **adopted** instead of recreated.
+OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**, on any OpenStack cloud, public or private, without admin rights: networks, routers, security groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects created elsewhere (shared networks, security group catalogs, DNS zones, volumes) can be **adopted** instead of recreated.
 
 > [!WARNING]
 > **Pre-release, under redesign.** The code currently on `main` predates the design described in [ADR-0001](docs/adr/0001-module-design.md) and is being rewritten in successive pull requests (see [Roadmap](#roadmap)). Its interface **will change without notice** until `v0.1.0`. Do not use it in production.
@@ -157,7 +157,7 @@ Examples are written first, as the specification of the interface, and become ex
 | OpenTofu | >= 1.6 | 1.6.3 and latest |
 | Terraform | >= 1.6 | 1.6.6 and latest |
 | Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` from `v0.1.0` (pre-release code: `~> 1.53`) | pinned minimum and latest |
-| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | DevStack (integration tests, planned) |
+| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | A private cloud and a public OpenStack cloud (planned); DevStack for `cloud-baseline` |
 
 ## Operating the module
 
@@ -175,17 +175,12 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 
 ## Roadmap
 
-| Step | Content | Status |
+| Release | Content | Status |
 |---|---|---|
-| 1 | Repository skeleton, CI, documentation | in review |
-| 1b | Examples and hand-written tenant model reference, as the interface specification | planned |
-| 2 | `modules/cloud-baseline` with mocked tests | planned |
-| 3 | Building blocks `network` and `security-group`, adoption by injection | planned |
-| 4 | Building block `instance`: ports, management port, volumes, floating IPs, DNS | planned |
-| 5 | `modules/cloudinit` | planned |
-| 6 | Load balancers and DNS | planned |
-| 7 | Tenant composite, output contract, examples, single-plan and empty-plan tests on both tools | planned |
-| 8 | Documentation pass, `v0.1.0` | planned |
+| — | Repository skeleton, CI, documentation | in review |
+| — | Examples and hand-written tenant model reference, as the interface specification | planned |
+| **v0.1.0** | Building blocks `network`, `security-group`, `instance`, `loadbalancer`, `dns`; `modules/cloudinit`; tenant composite; output contract; tests on OpenTofu and Terraform, on a private and a public OpenStack cloud | planned |
+| **v0.2.0** | `modules/cloud-baseline` (admin level), tested on DevStack | planned |
 
 ## Reference
 
