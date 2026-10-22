@@ -139,7 +139,7 @@ provider "openstack" {
 
 ## Examples
 
-Examples are added with the modules they exercise (see [Roadmap](#roadmap)):
+Examples are written first, as the specification of the interface, and become executable (and part of the test suite) as each module lands (see [Roadmap](#roadmap)):
 
 | Example | Shows |
 |---|---|
@@ -178,6 +178,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | Step | Content | Status |
 |---|---|---|
 | 1 | Repository skeleton, CI, documentation | in review |
+| 1b | Examples and hand-written tenant model reference, as the interface specification | planned |
 | 2 | `modules/cloud-baseline` with mocked tests | planned |
 | 3 | Building blocks `network` and `security-group`, adoption by injection | planned |
 | 4 | Building block `instance`: ports, management port, volumes, floating IPs, DNS | planned |
