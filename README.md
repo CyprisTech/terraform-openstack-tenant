@@ -181,7 +181,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 |---|---|---|
 | — | Repository skeleton, CI, documentation | done |
 | — | Examples and hand-written tenant model reference, as the interface specification | in review |
-| **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance`, `loadbalancer`, `dns`; `modules/cloudinit`; tenant composite; output contract; tests on OpenTofu and Terraform, on a private and a public OpenStack cloud | planned |
+| **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer`, `dns`; `modules/cloudinit`; tenant composite; output contract; tests on OpenTofu and Terraform, on a private and a public OpenStack cloud | planned |
 | **v0.2.0** | `modules/cloud-baseline` (admin level), tested on DevStack | planned |
 
 ## Reference
