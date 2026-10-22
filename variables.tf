@@ -206,4 +206,13 @@ variable "tenant" {
     ]))
     error_message = "Each port network must be a key of tenant.networks or tenant.existing.networks."
   }
+
+  validation {
+    condition = alltrue(concat(
+      [for k in keys(var.tenant.networks) : !contains(keys(var.tenant.existing.networks), k)],
+      [for k in keys(var.tenant.security_groups) : !contains(keys(var.tenant.existing.security_groups), k)],
+      [for k in keys(var.tenant.dns.zones) : !contains(keys(var.tenant.existing.dns_zones), k)],
+    ))
+    error_message = "A key cannot be used both for a local object and an existing one (networks, security_groups, dns zones)."
+  }
 }
