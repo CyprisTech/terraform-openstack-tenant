@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Building blocks `modules/loadbalancer` (Octavia load balancer, listeners, pools, members keyed by name, health monitors, floating IP and DNS records on the VIP) and `modules/dns` (zones, optionally created for a project, and record sets in local, owned or shared zones), with mocked tests.
 - Module `modules/cloudinit`: cloud-config rendering (hostname, users, packages, files, commands); data disks handled by idempotent systemd units that wait for the device, format only when empty, refuse partitioned devices and mount by label at every boot; bind mounts; tests.
 - Building block `modules/instance`: ports keyed by name (security groups, allowed address pairs, optional port security), boot from image, new volume or existing volume, created or attached data volumes, floating IPs, DNS records on fixed and floating addresses; fixed lifecycle rules; mocked tests.
 - Building blocks `modules/network` (network, subnets, routers attached through dedicated ports, host routes and advertised routes) and `modules/security-group` (rules keyed by name, `self` references), with mocked tests on OpenTofu and Terraform.
@@ -16,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CI on GitHub Actions: `fmt`, `init` and `validate` on OpenTofu and Terraform (lowest supported and latest), TFLint, gitleaks over the full history, Trivy configuration scan, README reference check. Actions pinned by commit SHA; Dependabot updates.
 - Documentation rules for code (descriptions on every variable and output, enforced by TFLint; comments explain why).
 - Documentation: README, architecture guide, operations guide, ADR-0001 (module design), contribution guide, Code of Conduct, security policy, support page, issue and pull request templates.
+
+### Changed
+
+- Load balancers take an Octavia `flavor_id` instead of a `topology`: Octavia defines the topology in flavors, not on the load balancer.
 
 ### Removed
 

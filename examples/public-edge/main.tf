@@ -40,7 +40,7 @@ module "tenant" {
     load_balancers = {
       edge = {
         vip         = { network = "edge", subnet = "main" }
-        topology    = "ACTIVE_STANDBY"
+        flavor_id   = var.octavia_flavor_id # an active/standby flavor
         floating_ip = { pool = "public", dns = [{ name = "", zone = "site" }, { name = "www", zone = "site" }] }
         listeners = {
           http = {

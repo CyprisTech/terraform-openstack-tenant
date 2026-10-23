@@ -194,8 +194,9 @@ Requires Octavia. Map key: load balancer name.
 |---|---|---|---|
 | `vip.network` / `vip.subnet` | string | required | Keys in `networks` or `existing.networks` |
 | `vip.ip` | string | allocated | Fixed virtual IP |
-| `topology` | string | `"SINGLE"` | `"SINGLE"` or `"ACTIVE_STANDBY"` (amphora provider) |
-| `flavor` | string | cloud default | Octavia flavor |
+| `flavor_id` | string | cloud default | Octavia flavor. The **topology** (single amphora or active/standby pair) and the amphora size are defined by flavors created by the cloud administrator: `openstack loadbalancer flavor list` |
+| `availability_zone` | string | cloud default | Octavia availability zone |
+| `security_groups` | list(string) | `[]` | Keys of local or existing security groups applied to the VIP port |
 | `floating_ip` | object | — | Same attributes as a port's `floating_ip` |
 | `listeners.<key>.protocol` / `port` | string / number | required | For example `"TCP"` 443, `"HTTP"` 80 |
 | `listeners.<key>.allowed_cidrs` | list(string) | `[]` | Source restriction |
@@ -249,8 +250,8 @@ The building blocks take **IDs** instead of keys: wiring them together is the ca
 | [`modules/network`](../modules/network) ✅ | `name`, `project_id`, `mtu`, `subnets` (as above), `routers` with `external_network_id`, `external_subnet_id`, `external_ip`, `internal_subnet`, `internal_ip`, `advertise_routes` | `id`, `name`, `subnets`, `routers` |
 | [`modules/security-group`](../modules/security-group) ✅ | `name`, `description`, `project_id`, `delete_default_rules`, `rules` with `remote_group_id` (an ID, or `"self"`) instead of `remote_group` | `id`, `name`, `rule_ids` |
 | [`modules/instance`](../modules/instance) ✅ | `name`, `project_id`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `fixed_ip`, `security_group_ids`, `port_security_enabled`, `allowed_address_pairs`, `floating_ip` (`pool`, `subnet_id`, `dns`) and `dns` (entries `{ name, zone_id, zone_name, ttl }`); `volumes`; `user_data`; `key_pair`; `server_group_id`; `labels`; `metadata`; `default_ttl` | `id`, `name`, `az`, `labels`, `ports`, `volumes` |
-| `modules/loadbalancer` | `name`, `vip` with `subnet_id`, `topology`, `floating_ip`, `listeners` with members as `{ address, subnet_id }` | `id`, `vip`, `floating_ip` |
-| `modules/dns` | `zones`, `records` with `zone_id` | `zones` |
+| [`modules/loadbalancer`](../modules/loadbalancer) ✅ | `name`, `project_id`, `vip` (`subnet_id`, `address`), `flavor_id`, `availability_zone`, `security_group_ids`, `floating_ip` (`pool`, `subnet_id`, `dns`), `listeners` with `pool.members` keyed by name as `{ address, subnet_id, port, weight, backup }`; `default_ttl` | `id`, `vip`, `floating_ip`, `fqdns`, `listeners` |
+| [`modules/dns`](../modules/dns) ✅ | `project_id` (admin: create zones *for* a project), `zones`, `records` with `zone` (local key) or `zone_id` + `zone_name`; `default_ttl` | `zones`, `records` |
 | [`modules/cloudinit`](../modules/cloudinit) ✅ | `hostname`, `fqdn`, `timezone`, `users`, `packages`, `package_update`, `package_upgrade`, `disks`, `bind_mounts`, `write_files`, `runcmd`, `extra_config` | `rendered`, `config` |
 
 ✅ = implemented. Exact inputs are documented in each module's README.

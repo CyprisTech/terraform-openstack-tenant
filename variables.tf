@@ -121,9 +121,10 @@ variable "tenant" {
     })), {})
 
     load_balancers = optional(map(object({
-      vip      = object({ network = string, subnet = string, ip = optional(string) })
-      topology = optional(string, "SINGLE")
-      flavor   = optional(string)
+      vip               = object({ network = string, subnet = string, ip = optional(string) })
+      flavor_id         = optional(string) # Octavia flavor: defines the topology (single or active/standby)
+      availability_zone = optional(string)
+      security_groups   = optional(list(string), [])
       floating_ip = optional(object({
         pool   = string
         subnet = optional(string)
