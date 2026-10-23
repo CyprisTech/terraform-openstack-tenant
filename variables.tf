@@ -39,6 +39,7 @@ variable "tenant" {
         external_ip             = optional(string)
         internal_subnet         = string # key in this network's subnets
         internal_ip             = optional(string)
+        default_gateway         = optional(bool)
         advertise_routes        = optional(list(string), [])
         admin_state_up          = optional(bool, true)
         availability_zone_hints = optional(list(string), [])
@@ -252,5 +253,26 @@ variable "tenant" {
   validation {
     condition     = alltrue([for z in values(var.tenant.existing.dns_zones) : endswith(z.name, ".")]) && alltrue([for z in values(var.tenant.dns.zones) : endswith(z.name, ".")])
     error_message = "DNS zone names must end with a dot."
+  }
+
+  validation {
+    condition = alltrue(concat(
+      flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : contains(keys(try(var.tenant.networks[p.network].subnets, var.tenant.existing.networks[p.network].subnets, {})), p.subnet)]]),
+      [for lb in values(var.tenant.load_balancers) : contains(keys(try(var.tenant.networks[lb.vip.network].subnets, var.tenant.existing.networks[lb.vip.network].subnets, {})), lb.vip.subnet)],
+    ))
+    error_message = "Each port and load balancer VIP must reference a declared subnet of its network (for adopted networks, declare the subnet in existing.networks.<key>.subnets)."
+  }
+
+  validation {
+    condition     = alltrue([for lb in values(var.tenant.load_balancers) : contains(concat(keys(var.tenant.networks), keys(var.tenant.existing.networks)), lb.vip.network)])
+    error_message = "Each load balancer vip.network must be a key of tenant.networks or tenant.existing.networks."
+  }
+
+  validation {
+    condition = var.tenant.management_port == null || (
+      contains(concat(keys(var.tenant.networks), keys(var.tenant.existing.networks)), try(var.tenant.management_port.network, "")) &&
+      length(keys(try(var.tenant.networks[var.tenant.management_port.network].subnets, var.tenant.existing.networks[var.tenant.management_port.network].subnets, {}))) > 0
+    )
+    error_message = "management_port.network must be a key of tenant.networks or tenant.existing.networks with at least one declared subnet."
   }
 }

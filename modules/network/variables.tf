@@ -66,8 +66,11 @@ variable "routers" {
     - external_subnet_id: subnet of that network for the gateway address; null lets Neutron choose.
     - external_ip: fixed gateway address; requires external_subnet_id.
     - internal_subnet: key of the subnet of this network the router is attached to.
-    - internal_ip: fixed router address on that subnet; null allocates one. Set it to the
-      subnet's gateway_ip to make this router the default gateway.
+    - internal_ip: fixed router address on that subnet.
+    - default_gateway: give this router the subnet's gateway address (the default route of the
+      instances). When no router of a subnet sets internal_ip or default_gateway, the first
+      router of that subnet in key order is the default gateway; other routers get an
+      allocated address and are reached through advertise_routes.
     - advertise_routes: destinations pushed to the internal subnet as host routes via this router.
   EOT
   type = map(object({
@@ -76,6 +79,7 @@ variable "routers" {
     external_ip             = optional(string)
     internal_subnet         = string
     internal_ip             = optional(string)
+    default_gateway         = optional(bool)
     advertise_routes        = optional(list(string), [])
     admin_state_up          = optional(bool, true)
     availability_zone_hints = optional(list(string), [])
@@ -85,6 +89,19 @@ variable "routers" {
   validation {
     condition     = alltrue([for k, r in var.routers : contains(keys(var.subnets), r.internal_subnet)])
     error_message = "Each router internal_subnet must be a key of subnets."
+  }
+
+  validation {
+    condition = alltrue([
+      for sk in distinct([for r in values(var.routers) : r.internal_subnet]) :
+      length([for r in values(var.routers) : r if r.internal_subnet == sk && r.default_gateway == true]) <= 1
+    ])
+    error_message = "At most one router per subnet can set default_gateway = true."
+  }
+
+  validation {
+    condition     = alltrue([for r in values(var.routers) : !(r.default_gateway == true && r.internal_ip != null)])
+    error_message = "A router takes either default_gateway = true or an explicit internal_ip, not both."
   }
 
   validation {

@@ -81,10 +81,13 @@ Map key: network name (unless `name` is set).
 | `external_subnet` | string | any | Key of the external subnet for the gateway |
 | `external_ip` | string | allocated | Fixed gateway address on the external network |
 | `internal_subnet` | string | required | Key of the subnet of this network |
-| `internal_ip` | string | allocated | Fixed router address on the internal subnet |
+| `internal_ip` | string | see below | Fixed router address on the internal subnet |
+| `default_gateway` | bool | see below | Give this router the subnet's gateway address |
 | `advertise_routes` | list(string) | `[]` | Destinations pushed to the internal subnet as host routes via this router |
 | `admin_state_up` | bool | `true` | |
 | `availability_zone_hints` | list(string) | `[]` | |
+
+**Default gateway.** Instances use the subnet's gateway address as default route. When no router of a subnet sets `internal_ip` or `default_gateway`, the **first router of that subnet in key order** takes the gateway address; the others get an allocated address and are reached through `advertise_routes`. Set `default_gateway = true` on another router to choose it, or manage every address with `internal_ip`.
 
 ## `security_groups`
 

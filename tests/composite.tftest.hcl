@@ -163,3 +163,16 @@ run "rejects_floating_ip_pool_not_adopted" {
 
   expect_failures = [var.tenant]
 }
+
+run "rejects_undeclared_subnet" {
+  command = plan
+
+  variables {
+    tenant = {
+      existing  = { networks = { shared = { name = "shared" } } }
+      instances = { a = { az = "nova", flavor = "m1", image = "img", ports = { main = { network = "shared", subnet = "v4" } } } }
+    }
+  }
+
+  expect_failures = [var.tenant]
+}

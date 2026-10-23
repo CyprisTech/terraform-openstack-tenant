@@ -66,6 +66,83 @@ run "keys_follow_the_input" {
   }
 }
 
+run "first_router_is_the_default_gateway" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "192.168.10.0/24", gateway_ip = "192.168.10.1" } }
+    routers = {
+      a-out     = { external_network_id = "ext-public", internal_subnet = "main" }
+      b-transit = { external_network_id = "ext-transit", internal_subnet = "main", advertise_routes = ["10.10.0.0/22"] }
+    }
+  }
+
+  assert {
+    condition     = openstack_networking_port_v2.router["a-out"].fixed_ip[0].ip_address == "192.168.10.1"
+    error_message = "Without explicit addresses, the first router takes the subnet's gateway address."
+  }
+
+  assert {
+    condition     = openstack_networking_port_v2.router["b-transit"].fixed_ip[0].ip_address == null
+    error_message = "Other routers get an allocated address."
+  }
+}
+
+run "explicit_default_gateway" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "192.168.10.0/24", gateway_ip = "192.168.10.1" } }
+    routers = {
+      a-transit = { external_network_id = "ext-transit", internal_subnet = "main" }
+      b-out     = { external_network_id = "ext-public", internal_subnet = "main", default_gateway = true }
+    }
+  }
+
+  assert {
+    condition     = openstack_networking_port_v2.router["b-out"].fixed_ip[0].ip_address == "192.168.10.1" && openstack_networking_port_v2.router["a-transit"].fixed_ip[0].ip_address == null
+    error_message = "default_gateway = true picks the gateway router."
+  }
+}
+
+run "no_automatic_gateway_when_addresses_are_explicit" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  assert {
+    condition     = openstack_networking_port_v2.router["to-transit"].fixed_ip[0].ip_address == null && openstack_networking_port_v2.router["to-public"].fixed_ip[0].ip_address == "192.168.10.1"
+    error_message = "When a router of the subnet sets internal_ip, nothing is automatic."
+  }
+}
+
+run "rejects_two_default_gateways" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    routers = {
+      a = { external_network_id = "x", internal_subnet = "main", default_gateway = true }
+      b = { external_network_id = "y", internal_subnet = "main", default_gateway = true }
+    }
+  }
+
+  expect_failures = [var.routers]
+}
+
 run "rejects_unknown_internal_subnet" {
   command = plan
 
