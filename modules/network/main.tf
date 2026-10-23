@@ -56,8 +56,12 @@ resource "openstack_networking_port_v2" "router" {
   network_id = openstack_networking_network_v2.this.id
 
   fixed_ip {
-    subnet_id  = openstack_networking_subnet_v2.this[each.value.internal_subnet].id
-    ip_address = each.value.internal_ip
+    subnet_id = openstack_networking_subnet_v2.this[each.value.internal_subnet].id
+    ip_address = (
+      each.value.internal_ip != null ? each.value.internal_ip :
+      local.gateway_router[each.value.internal_subnet] == each.key ? openstack_networking_subnet_v2.this[each.value.internal_subnet].gateway_ip :
+      null
+    )
   }
 }
 
@@ -69,6 +73,19 @@ resource "openstack_networking_router_interface_v2" "this" {
 }
 
 locals {
+  # The router holding each subnet's gateway address: the one that sets
+  # default_gateway = true, otherwise the first router of the subnet in key
+  # order, unless some router of the subnet manages its address explicitly.
+  gateway_router = {
+    for sk in keys(var.subnets) : sk => try(
+      [for rk in sort(keys(var.routers)) : rk if var.routers[rk].internal_subnet == sk && var.routers[rk].default_gateway == true][0],
+      alltrue([for r in values(var.routers) : r.internal_ip == null && r.default_gateway == null if r.internal_subnet == sk])
+      ? [for rk in sort(keys(var.routers)) : rk if var.routers[rk].internal_subnet == sk][0]
+      : null,
+      null,
+    )
+  }
+
   # Keys are built from input keys and destinations only, so they are known at
   # plan time even when the router address is allocated during apply.
   host_routes = merge(

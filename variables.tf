@@ -39,6 +39,7 @@ variable "tenant" {
         external_ip             = optional(string)
         internal_subnet         = string # key in this network's subnets
         internal_ip             = optional(string)
+        default_gateway         = optional(bool)
         advertise_routes        = optional(list(string), [])
         admin_state_up          = optional(bool, true)
         availability_zone_hints = optional(list(string), [])

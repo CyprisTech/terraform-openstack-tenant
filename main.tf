@@ -148,6 +148,7 @@ module "network" {
       external_ip             = r.external_ip
       internal_subnet         = r.internal_subnet
       internal_ip             = r.internal_ip
+      default_gateway         = r.default_gateway
       advertise_routes        = r.advertise_routes
       admin_state_up          = r.admin_state_up
       availability_zone_hints = r.availability_zone_hints
