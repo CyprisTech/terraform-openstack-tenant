@@ -6,26 +6,9 @@ variable "tenant" {
     See docs/tenant-model.md for the meaning of every attribute.
   EOT
   type = object({
-    # Only for labs: create the project (requires admin credentials).
-    # Otherwise resources are created in the project of the provider's token.
-    project = optional(object({
-      create      = optional(bool, false)
-      name        = optional(string)
-      description = optional(string, "")
-      quotas = optional(object({
-        compute = optional(object({ cores = optional(number), ram = optional(number), instances = optional(number) }), {})
-        network = optional(map(number), {})
-        volume  = optional(map(number), {})
-      }), {})
-    }), {})
-
-    role_assignments = optional(map(object({
-      kind = string # "user" or "group"
-      name = string
-      role = string
-    })), {})
-
-    # Objects owned elsewhere, adopted by ID (no lookup) or by name (lookup, must exist).
+    # Objects owned elsewhere, adopted by ID (may be created in the same apply)
+    # or by name (looked up at plan time, must exist). DNS zones always need
+    # their name, which builds record names; their ID is optional.
     existing = optional(object({
       networks = optional(map(object({
         id      = optional(string)
@@ -33,7 +16,7 @@ variable "tenant" {
         subnets = optional(map(object({ id = optional(string), name = optional(string) })), {})
       })), {})
       security_groups = optional(map(object({ id = optional(string), name = optional(string) })), {})
-      dns_zones       = optional(map(object({ id = optional(string), name = optional(string) })), {})
+      dns_zones       = optional(map(object({ id = optional(string), name = string })), {})
     }), {})
 
     networks = optional(map(object({
@@ -103,8 +86,8 @@ variable "tenant" {
         fixed_ip        = optional(string)
         security_groups = optional(list(string), [])
         floating_ip = optional(object({
-          pool   = string
-          subnet = optional(string)
+          pool   = string           # key in existing.networks
+          subnet = optional(string) # key in that network's subnets
           dns    = optional(list(object({ name = string, zone = string })), [])
         }))
         dns = optional(list(object({ name = string, zone = string })), [])
@@ -126,8 +109,8 @@ variable "tenant" {
       availability_zone = optional(string)
       security_groups   = optional(list(string), [])
       floating_ip = optional(object({
-        pool   = string
-        subnet = optional(string)
+        pool   = string           # key in existing.networks
+        subnet = optional(string) # key in that network's subnets
         dns    = optional(list(object({ name = string, zone = string })), [])
       }))
       listeners = map(object({
@@ -184,9 +167,8 @@ variable "tenant" {
     condition = alltrue(concat(
       [for k, n in var.tenant.existing.networks : (n.id == null) != (n.name == null)],
       [for k, g in var.tenant.existing.security_groups : (g.id == null) != (g.name == null)],
-      [for k, z in var.tenant.existing.dns_zones : (z.id == null) != (z.name == null)],
     ))
-    error_message = "Each existing object needs exactly one of id or name."
+    error_message = "Each existing network and security group needs exactly one of id or name."
   }
 
   validation {
@@ -215,5 +197,60 @@ variable "tenant" {
       [for k in keys(var.tenant.dns.zones) : !contains(keys(var.tenant.existing.dns_zones), k)],
     ))
     error_message = "A key cannot be used both for a local object and an existing one (networks, security_groups, dns zones)."
+  }
+
+  validation {
+    condition = alltrue(concat(
+      flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : contains(keys(var.tenant.existing.networks), p.floating_ip.pool) if p.floating_ip != null]]),
+      [for lb in values(var.tenant.load_balancers) : contains(keys(var.tenant.existing.networks), lb.floating_ip.pool) if lb.floating_ip != null],
+    ))
+    error_message = "Each floating_ip.pool must be a key of tenant.existing.networks."
+  }
+
+  validation {
+    condition = alltrue(concat(
+      flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : [for g in p.security_groups : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), g)]]]),
+      flatten([for lb in values(var.tenant.load_balancers) : [for g in lb.security_groups : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), g)]]),
+      [for g in concat(try(var.tenant.management_port.security_groups, []), try(var.tenant.management_port.egress_security_groups, [])) : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), g)],
+      flatten([for sg in values(var.tenant.security_groups) : [for r in values(sg.rules) : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), r.remote_group) if r.remote_group != null]]),
+    ))
+    error_message = "Every security group reference must be a key of tenant.security_groups or tenant.existing.security_groups."
+  }
+
+  validation {
+    condition = alltrue(concat(
+      flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : [for d in concat(p.dns, try(p.floating_ip.dns, [])) : contains(concat(keys(var.tenant.dns.zones), keys(var.tenant.existing.dns_zones)), d.zone)]]]),
+      flatten([for lb in values(var.tenant.load_balancers) : [for d in try(lb.floating_ip.dns, []) : contains(concat(keys(var.tenant.dns.zones), keys(var.tenant.existing.dns_zones)), d.zone)]]),
+      [for r in values(var.tenant.dns.records) : contains(concat(keys(var.tenant.dns.zones), keys(var.tenant.existing.dns_zones)), r.zone)],
+    ))
+    error_message = "Every DNS zone reference must be a key of tenant.dns.zones or tenant.existing.dns_zones."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for lb in values(var.tenant.load_balancers) : [
+        for l in values(lb.listeners) : [
+          for m in l.pool.members :
+          length(split(".", m)) == 2 && contains(keys(var.tenant.instances), split(".", m)[0]) &&
+          contains(concat(keys(try(var.tenant.instances[split(".", m)[0]].ports, {})), try(var.tenant.instances[split(".", m)[0]].management_port, false) ? ["management"] : []), try(split(".", m)[1], ""))
+        ]
+      ]
+    ]))
+    error_message = "Each load balancer member must be \"<instance>.<port>\" with an existing instance and port key."
+  }
+
+  validation {
+    condition     = var.tenant.management_port != null || alltrue([for i in values(var.tenant.instances) : !i.management_port])
+    error_message = "An instance sets management_port = true but tenant.management_port is not defined."
+  }
+
+  validation {
+    condition     = alltrue([for i in values(var.tenant.instances) : !contains(keys(i.ports), "management") || !i.management_port])
+    error_message = "The port key \"management\" is reserved for the management port."
+  }
+
+  validation {
+    condition     = alltrue([for z in values(var.tenant.existing.dns_zones) : endswith(z.name, ".")]) && alltrue([for z in values(var.tenant.dns.zones) : endswith(z.name, ".")])
+    error_message = "DNS zone names must end with a dot."
   }
 }
