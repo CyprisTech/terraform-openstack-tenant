@@ -139,7 +139,7 @@ tenant = {
   load_balancers? = {
     edge = {
       vip = { network = "private", subnet = "main", ip? }    # local or existing network
-      topology? = "SINGLE", flavor?
+      flavor_id?, availability_zone?, security_groups? = []   # flavor_id: Octavia flavor (topology)
       floating_ip? = { pool = "public", subnet?, dns? = [{ name = "", zone = "public" }] }
       listeners = {
         https = {
@@ -254,7 +254,7 @@ The modules configure **no backend, no state encryption, no locking, no secret s
   - The modules set **no `prevent_destroy`**. Data that must survive belongs in volumes created outside the module (by the caller, who can protect them with their own `lifecycle`) and adopted with `existing`.
 - `user_data` is an input, rendered by `modules/cloudinit`. Data volumes are attached after boot, so cloud-init's `fs_setup` and `mounts` would run before the device exists: each disk is handled by an idempotent systemd unit that waits for the device, formats it only when it holds no file system, and mounts it by label at every boot.
 - Security group rules keyed by name.
-- Octavia: `topology` is exposed; examples use TCP/HTTP health monitors; `PING` remains available.
+- Octavia: the topology (single or active/standby) is not a load balancer attribute but a property of the Octavia **flavor** chosen by the cloud administrator, so the model exposes `flavor_id`. Examples use TCP/HTTP health monitors; `PING` remains available.
 - Declared roles are applied as declared.
 
 ### D10. No site-specific defaults
