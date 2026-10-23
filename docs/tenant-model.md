@@ -251,6 +251,6 @@ The building blocks take **IDs** instead of keys: wiring them together is the ca
 | [`modules/instance`](../modules/instance) ✅ | `name`, `project_id`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `fixed_ip`, `security_group_ids`, `port_security_enabled`, `allowed_address_pairs`, `floating_ip` (`pool`, `subnet_id`, `dns`) and `dns` (entries `{ name, zone_id, zone_name, ttl }`); `volumes`; `user_data`; `key_pair`; `server_group_id`; `labels`; `metadata`; `default_ttl` | `id`, `name`, `az`, `labels`, `ports`, `volumes` |
 | `modules/loadbalancer` | `name`, `vip` with `subnet_id`, `topology`, `floating_ip`, `listeners` with members as `{ address, subnet_id }` | `id`, `vip`, `floating_ip` |
 | `modules/dns` | `zones`, `records` with `zone_id` | `zones` |
-| `modules/cloudinit` | `hostname`, `users`, `disks`, `packages` | `rendered` |
+| [`modules/cloudinit`](../modules/cloudinit) ✅ | `hostname`, `fqdn`, `timezone`, `users`, `packages`, `package_update`, `package_upgrade`, `disks`, `bind_mounts`, `write_files`, `runcmd`, `extra_config` | `rendered`, `config` |
 
 ✅ = implemented. Exact inputs are documented in each module's README.
