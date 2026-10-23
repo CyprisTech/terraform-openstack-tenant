@@ -51,16 +51,37 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
       - run: tflint --init
-      # Examples call modules that are not written yet (the specification
-      # comes first), so only the root is linted for now. Switch to
-      # --recursive and to --minimum-failure-severity=warning once the
-      # building blocks exist.
-      - run: tflint --format compact --minimum-failure-severity=error
-      - name: tflint (modules, warnings fail)
+      # Root, building blocks and examples; warnings fail the job.
+      - run: tflint --recursive --format compact
+
+  examples:
+    name: examples (${{ matrix.tool }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: [tofu, terraform]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - if: matrix.tool == 'tofu'
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: latest
+          tofu_wrapper: false
+
+      - if: matrix.tool == 'terraform'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: latest
+          terraform_wrapper: false
+
+      - name: init and validate every example
         run: |
-          for d in modules/*/; do
+          for d in $(find examples -name '*.tf' -printf '%h\n' | sort -u); do
             echo "::group::$d"
-            tflint --chdir="$d" --config="$PWD/.tflint.hcl" --format compact
+            ${{ matrix.tool }} -chdir="$d" init -backend=false -input=false
+            ${{ matrix.tool }} -chdir="$d" validate
             echo "::endgroup::"
           done
 

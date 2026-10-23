@@ -3,7 +3,7 @@
 This page documents every attribute of the `tenant` variable of the composite module, and the inputs of the building blocks. The design behind it is in [ADR-0001](adr/0001-module-design.md). Examples live in [`examples/`](../examples/README.md).
 
 > [!NOTE]
-> Status: specification for `v0.1.0`. The interface is declared in [`variables.tf`](../variables.tf); the modules that implement it are being written.
+> Status: implemented on `main` for `v0.1.0` (tested with mocked providers; real cloud tests pending). The interface is declared in [`variables.tf`](../variables.tf).
 
 ## Conventions
 
@@ -17,8 +17,6 @@ This page documents every attribute of the `tenant` variable of the composite mo
 
 | Attribute | Type | Default | Description |
 |---|---|---|---|
-| [`project`](#project) | object | `{}` | Project creation, for labs only |
-| [`role_assignments`](#role_assignments) | map | `{}` | Roles on the created project, for labs only |
 | [`existing`](#existing) | object | `{}` | Objects owned elsewhere, adopted by ID or name |
 | [`networks`](#networks) | map | `{}` | Networks, subnets and routers created in the project |
 | [`security_groups`](#security_groups) | map | `{}` | Security groups and their rules |
@@ -28,32 +26,13 @@ This page documents every attribute of the `tenant` variable of the composite mo
 | [`dns`](#dns) | object | `{}` | Zones and free-form records (requires Designate) |
 | [`defaults`](#defaults) | object | `{}` | Defaults applied across the model |
 
-## `project`
+## Project
 
-By default the module creates nothing at the project level: all resources go to the **project of the provider's credentials**, and a member role is enough. Set `create = true` only for labs, with admin credentials.
-
-| Attribute | Type | Default | Description |
-|---|---|---|---|
-| `create` | bool | `false` | Create the project and set its quotas |
-| `name` | string | — | Project name, required when `create = true` |
-| `description` | string | `""` | Project description |
-| `quotas.compute` | object | `{}` | `cores`, `ram` (MiB), `instances` |
-| `quotas.network` | map(number) | `{}` | Neutron quotas, for example `floatingip`, `network`, `port`, `router`, `security_group`, `security_group_rule` |
-| `quotas.volume` | map(number) | `{}` | Cinder quotas, for example `volumes`, `gigabytes`, `snapshots` |
-
-## `role_assignments`
-
-Only with `project.create = true`. Map key: a free name for the assignment.
-
-| Attribute | Type | Description |
-|---|---|---|
-| `kind` | string | `"user"` or `"group"` |
-| `name` | string | Name of the existing user or group |
-| `role` | string | Role name, for example `member` or `reader` |
+The composite creates nothing at the project level: all resources go to the **project of the provider's credentials**, and a member role is enough. Projects, quotas and role assignments are created by `cloud-baseline` (`v0.2.0`). Nova cannot create instances in another project than the token's, so a composite creating its own project could not place its instances in it.
 
 ## `existing`
 
-Objects created by another stack, another team or the console. Each one is given **by exactly one of `id` or `name`**:
+Objects created by another stack, another team or the console. Networks, subnets and security groups are given **by exactly one of `id` or `name`**; DNS zones always give their `name` (it builds record names) and optionally their `id`:
 
 - with `id`, nothing is looked up: the ID may come from another module in the same configuration, even if that object is created in the same apply;
 - with `name`, a data source resolves the object at plan time: it must already exist and be visible from the project.
@@ -63,7 +42,8 @@ Objects created by another stack, another team or the console. Each one is given
 | `networks.<key>.id` / `.name` | string | Network to adopt |
 | `networks.<key>.subnets.<key>.id` / `.name` | string | Subnets of that network that the model references (router gateways, ports) |
 | `security_groups.<key>.id` / `.name` | string | Security group to adopt, typically from a shared catalog |
-| `dns_zones.<key>.id` / `.name` | string | Zone owned by the project or shared with it |
+| `dns_zones.<key>.name` | string | Zone name with its trailing dot (required) |
+| `dns_zones.<key>.id` | string | Zone ID; optional, avoids the lookup by name |
 
 > [!IMPORTANT]
 > A DNS zone is usable only if the project **owns** it or if it is **shared** with the project. Zones should be created *for* a project or shared with it by the administrator; transferring a zone after creation hides it from the stack that created it.
@@ -159,15 +139,15 @@ Map key: instance name.
 | `"volume"` | `size`, `volume_type` | Root volume created from the image |
 | `"existing"` | exactly one of `id`, `name` | Boot from an existing volume, for example to rebuild an instance on its surviving disk |
 
-**`ports.<key>`** — the first port in key order is the primary interface.
+**`ports.<key>`** — the first port in key order is the primary interface. The key `management` is reserved for the management port.
 
 | Attribute | Type | Default | Description |
 |---|---|---|---|
 | `network` / `subnet` | string | required | Keys in `networks` or `existing.networks` |
 | `fixed_ip` | string | allocated | Fixed address |
 | `security_groups` | list(string) | `[]` | Keys of local or existing security groups |
-| `floating_ip.pool` | string | — | External network providing the floating IP |
-| `floating_ip.subnet` | string | any | Subnet of that network |
+| `floating_ip.pool` | string | — | Key in `existing.networks` of the external network providing the floating IP |
+| `floating_ip.subnet` | string | any | Key of a subnet of that network |
 | `floating_ip.dns` | list({name, zone}) | `[]` | A records on the floating IP; `zone` is a key in `dns.zones` or `existing.dns_zones` |
 | `dns` | list({name, zone}) | `[]` | A records on the fixed IP |
 
@@ -231,14 +211,14 @@ Requires Designate.
 
 ## Outputs
 
-The composite exposes outputs keyed like the input, with a fixed shape (absent values are `null`). Their provider-neutral contract will be specified in a dedicated ADR; the current draft is:
+The composite exposes outputs keyed like the input, with a fixed shape (absent values are `null`) and no OpenStack-specific notion. The contract will be formalised in a dedicated ADR; the implemented shape is:
 
 | Output | Content |
 |---|---|
-| `instances` | `<name> => { id, az, labels, ports = { <port> => { ip, floating_ip, fqdn } } }` |
+| `instances` | `<name> => { id, az, labels, ports = { <port> => { ip, floating_ip, fqdn } } }` (the management port appears under `management`) |
 | `networks` | `<name> => { id, subnets = { <subnet> => { id, cidr } } }` |
 | `security_groups` | `<name> => { id }` |
-| `load_balancers` | `<name> => { id, vip, floating_ip }` |
+| `load_balancers` | `<name> => { id, vip, floating_ip, fqdns }` |
 | `dns_zones` | `<name> => { id, name }` |
 
 ## Building blocks

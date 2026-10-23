@@ -1,5 +1,6 @@
-# A complete tenant in one stack, for evaluation and labs.
-# The module creates its own project, which requires admin credentials.
+# A complete tenant in one stack, for evaluation and labs: network, router,
+# security groups, two instances with cloud-init, data volumes and floating IPs.
+# Runs with a member role on an existing project (the project of the token).
 
 module "cloudinit" {
   source   = "../../modules/cloudinit"
@@ -19,16 +20,6 @@ module "tenant" {
   source = "../.."
 
   tenant = {
-    project = {
-      create      = true
-      name        = "lab"
-      description = "Evaluation tenant"
-      quotas = {
-        compute = { cores = 8, ram = 16384, instances = 4 }
-        network = { floatingip = 2 }
-      }
-    }
-
     existing = {
       networks = { public = { name = "public", subnets = { v4 = { name = "public-subnet" } } } }
     }

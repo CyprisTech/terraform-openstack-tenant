@@ -43,7 +43,7 @@ Three guidelines from the Terraform ecosystem frame the decision:
 | **Cloud baseline** | `modules/cloud-baseline` | cloud `admin` | Projects, quotas, users, groups, role assignments, aggregates, flavors, images, provider and shared networks, shared security group catalog, DNS zones |
 
 - Building blocks are part of the public interface, documented and versioned like the composite.
-- For labs, the composite can create its project (`project.create = true`), which requires admin credentials.
+- **The composite never creates its project.** Nova creates instances only in the project of the token (`openstack_compute_instance_v2` has no project argument), so a composite creating a project with admin credentials would put ports in the new project and instances in the admin project. Projects, quotas and role assignments belong to `cloud-baseline`; the tenant layers run in an existing project.
 - **Release order follows the audience:** `v0.1.0` delivers the tenant layers (building blocks and composite); `cloud-baseline` follows in `v0.2.0`.
 - **Portability across OpenStack clouds:** clouds differ in available services and policies. Octavia and Designate are optional: the composite works without them, and nothing assumes a specific deployment tool or vendor.
 - Plain module calls cover volatility: a long-lived network layer and a short-lived compute layer can each have their own state, with the second receiving the first's outputs through `existing`.
@@ -60,7 +60,9 @@ existing = {
 }
 ```
 
-- Every adopted object accepts `id` **or** `name`. With `id`, no lookup happens, so an object created in the same apply (by `cloud-baseline` or another module in the same root) can be adopted without a second plan. With `name`, a data source resolves it; the object must already exist.
+- Every adopted network and security group accepts `id` **or** `name`. With `id`, the object may be created in the same apply (by `cloud-baseline` or another module in the same root) and still be adopted without a second plan. With `name`, a data source resolves it at plan time; the object must already exist.
+- Adopted DNS zones always give their `name`, which builds record names and keys; their `id` is optional and avoids the lookup.
+- Floating IP pools are keys of `existing.networks`, like every other reference; the composite resolves the network name Neutron expects.
 - Flavors and images follow the same rule (`flavor = "m1.small"` or `flavor_id = "..."`).
 - Volumes holding data are adopted with `existing = { id | name }` on the volume.
 
@@ -70,14 +72,12 @@ One object, with maps keyed by name everywhere. Fields marked `?` are optional. 
 
 ```hcl
 tenant = {
-  project? = { create = false, name?, description?, quotas? = {...} }  # only for create = true; otherwise
-                                                                         # resources go to the provider's project
-  role_assignments? = { ops = { kind = "group", name = "demo-ops", role = "member" } }   # only with create = true
+  # Resources are created in the project of the provider's credentials.
 
   existing? = {                                              # see D2
     networks        = { transit = { id? | name?, subnets = { site-a = { id? | name? } } } }
     security_groups = { ssh = { id? | name? } }
-    dns_zones       = { public = { id? | name? } }
+    dns_zones       = { public = { id?, name } }               # name always: it builds record names
   }
 
   networks? = {
@@ -245,7 +245,7 @@ The modules configure **no backend, no state encryption, no locking, no secret s
 
 - Tenant layers need only a member role on their project. They never list or read projects: resources are created in the project of the provider's token.
 - DNS records can only be written in zones owned by the project or shared with it. `cloud-baseline` creates tenant-owned zones (`project`) or shares administrator-owned zones (`share_with`); see D4. Zone transfers are not used.
-- Quotas and role assignments are admin operations: available only with `project.create = true` or in `cloud-baseline`.
+- Quotas and role assignments are admin operations, available only in `cloud-baseline`.
 
 ### D9. Predictable behaviour
 
