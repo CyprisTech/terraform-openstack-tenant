@@ -19,8 +19,8 @@ module "tenant" {
         monitors = { id = var.monitoring_security_group_id }
       }
       dns_zones = {
-        own    = { name = "demo.example.org." }       # owned by this project
-        shared = { id = var.shared_services_zone_id } # owned by the administrator, shared with this project
+        own    = { name = "demo.example.org." }                                  # owned by this project
+        shared = { id = var.shared_services_zone_id, name = "svc.example.org." } # owned by the administrator, shared with this project
       }
     }
 

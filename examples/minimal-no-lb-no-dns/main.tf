@@ -22,7 +22,7 @@ module "tenant" {
         az     = "nova"
         flavor = "m1.small"
         image  = "ubuntu-24.04"
-        ports  = { main = { network = "app", subnet = "main", floating_ip = { pool = "external" } } }
+        ports  = { main = { network = "app", subnet = "main", floating_ip = { pool = "ext" } } }
       }
     }
   }
