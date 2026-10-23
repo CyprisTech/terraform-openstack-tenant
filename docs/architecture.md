@@ -14,7 +14,7 @@ This document explains how the modules are organised and the rules that make the
 
 The split follows the usual criteria for Terraform modules: **encapsulation** (one concern per building block), **privileges** (admin versus project) and **volatility** (long-lived networks versus short-lived instances can live in separate states, see below).
 
-For labs, the composite can create its own project (`project.create = true`) and run with admin credentials in a single stack.
+The composite never creates its project: Nova creates instances only in the project of the token. Projects, quotas and role assignments belong to `cloud-baseline`.
 
 ## The input model
 
@@ -33,7 +33,7 @@ Objects reference each other **by key**: a port names its `network` and `subnet`
 
 ## Adoption by injection
 
-A tenant usually relies on objects it does not own: shared networks, a security group catalog, DNS zones, sometimes volumes holding data. They are declared under `existing` (or with `existing` on a volume), **by ID or by name**:
+A tenant usually relies on objects it does not own: shared networks, a security group catalog, DNS zones, sometimes volumes holding data. They are declared under `existing` (or with `existing` on a volume), **by ID or by name** (DNS zones always with their name):
 
 ```hcl
 existing = {
@@ -71,7 +71,7 @@ Tenant layers need only a member role on their project:
 
 - they never list or read projects; resources are created in the project of the provider's credentials;
 - DNS records can only be written in zones owned by the project or shared with it. `cloud-baseline` either creates a zone **for** a tenant (`project`) or keeps it and **shares** it (`share_with`). Zones are never transferred after creation: a transfer hides the zone from the stack that created it;
-- quotas and role assignments are admin operations, available in `cloud-baseline` or with `project.create = true`.
+- quotas and role assignments are admin operations, available in `cloud-baseline` only.
 
 ## One plan, no `-target`
 

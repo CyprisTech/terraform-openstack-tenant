@@ -18,7 +18,6 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_tflint
-        exclude: ^examples/ # until the building blocks exist
       - id: terraform_docs
-        exclude: ^examples/ # until the building blocks exist
+        exclude: ^examples/ # example READMEs are written by hand
         args: [--hook-config=--path-to-file=README.md, --hook-config=--add-to-existing-file=true]

@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Tenant composite (root module): resolves keys to IDs for adopted and created objects, calls the building blocks, creates rules between local security groups, adds the management port, wires load balancer members to instance ports, and exposes the provider-neutral output contract (`instances`, `networks`, `security_groups`, `load_balancers`, `dns_zones`). Mocked test of a single plan on a complete tenant.
+- CI validates every example on both tools; TFLint runs recursively, warnings included.
 - Building blocks `modules/loadbalancer` (Octavia load balancer, listeners, pools, members keyed by name, health monitors, floating IP and DNS records on the VIP) and `modules/dns` (zones, optionally created for a project, and record sets in local, owned or shared zones), with mocked tests.
 - Module `modules/cloudinit`: cloud-config rendering (hostname, users, packages, files, commands); data disks handled by idempotent systemd units that wait for the device, format only when empty, refuse partitioned devices and mount by label at every boot; bind mounts; tests.
 - Building block `modules/instance`: ports keyed by name (security groups, allowed address pairs, optional port security), boot from image, new volume or existing volume, created or attached data volumes, floating IPs, DNS records on fixed and floating addresses; fixed lifecycle rules; mocked tests.
@@ -20,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- The composite no longer creates its project (`project`, `role_assignments` removed): Nova creates instances only in the project of the token. Project creation belongs to `cloud-baseline`.
+- Adopted DNS zones always give their `name` (it builds record names); `id` is optional.
+- `floating_ip.pool` is a key of `existing.networks`, like every other reference.
 - Load balancers take an Octavia `flavor_id` instead of a `topology`: Octavia defines the topology in flavors, not on the load balancer.
 
 ### Removed
