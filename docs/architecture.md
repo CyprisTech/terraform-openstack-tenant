@@ -112,3 +112,32 @@ Terraform does not allow `lifecycle` settings to depend on variables, so the mod
 ## Instance bootstrap
 
 `user_data` is an input. `modules/cloudinit` renders it from a typed description of users, packages, files, disks and bind mounts. Data volumes are usually attached after the instance has booted, so each disk is handled by a systemd unit that waits for the device, formats it only when it holds no file system, and mounts it by label at every boot. See [the module README](../modules/cloudinit/README.md).
+
+## Implementation map
+
+Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
+
+| Decision | Where |
+|---|---|
+| One model per tenant, references by key | [`variables.tf`](../variables.tf) (type and validation rules), [`main.tf`](../main.tf) (`local.network_ids`, `subnet_ids`, `security_group_ids`, `zone_ids`, `zone_names`) |
+| Adoption by injection (ID) or lookup (name) | `main.tf`: `data "openstack_networking_*" "existing"`, `local.existing_*_ids` |
+| No dependency of a module on its own outputs | `main.tf`: adopted-only tables (`local.existing_*`) passed to `module.network` and `module.security_group`; `openstack_networking_secgroup_rule_v2.cross_group` for rules between local groups |
+| Stable keys (one plan, no `-target`) | every `for_each` in `modules/*/main.tf` and `main.tf`; DNS keys `<port>/<fixed\|floating>/<name>@<zone_name>`, LB members `<listener>/<member>`, host routes `<subnet>/<destination>` |
+| Several routers per subnet, default gateway | `modules/network/main.tf`: dedicated router ports, `local.gateway_router` |
+| Management port convention | `main.tf`: `local.instance_ports` (reserved key `management`) |
+| Fixed lifecycle rules | `modules/instance/main.tf`: `ignore_changes = [user_data, image_id, image_name, block_device]`, no `prevent_destroy` |
+| Data disks attached after boot | `modules/cloudinit/templates/disk-setup.sh.tftpl` and `unit.service.tftpl` |
+| Octavia flavor instead of topology | `modules/loadbalancer`: `flavor_id` |
+| DNS zones created for a project | `modules/dns`: `project_id` (sudo header) |
+| Provider-neutral output contract | [`outputs.tf`](../outputs.tf) |
+| No operational opinion | no `backend` or `provider` block in any module |
+
+## Known limitations
+
+- **Real cloud tests pending.** Everything is tested with mocked providers on OpenTofu and Terraform; "the plan after `apply` is empty" can only be checked on a real cloud.
+- **No server groups in the composite.** `modules/instance` accepts `server_group_id`, but the composite does not yet create affinity or anti-affinity groups (useful to spread two reverse proxies over two hosts).
+- **TLS termination on Octavia** (`TERMINATED_HTTPS`) needs Barbican container references, not exposed yet; TCP passthrough with the PROXY protocol is supported.
+- **One fixed address per port**, IPv4 or IPv6 without router advertisement settings; no ports without a fixed IP.
+- **Security group rules between local groups** are created by the composite itself, outside `modules/security-group`; their addresses in the state reflect that.
+- **`cloud-baseline` is planned for `v0.2.0`**: until then, projects, quotas, users, shared networks and zones come from elsewhere and are adopted.
+

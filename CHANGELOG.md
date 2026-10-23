@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Routers: `default_gateway`; when no router of a subnet sets an address, the first router in key order takes the subnet's gateway address.
+- Composite validation of subnet, VIP and management port references.
+- Documentation: implementation map and known limitations in the architecture guide; README usage rewritten for the implemented interface.
 - Tenant composite (root module): resolves keys to IDs for adopted and created objects, calls the building blocks, creates rules between local security groups, adds the management port, wires load balancer members to instance ports, and exposes the provider-neutral output contract (`instances`, `networks`, `security_groups`, `load_balancers`, `dns_zones`). Mocked test of a single plan on a complete tenant.
 - CI validates every example on both tools; TFLint runs recursively, warnings included.
 - Building blocks `modules/loadbalancer` (Octavia load balancer, listeners, pools, members keyed by name, health monitors, floating IP and DNS records on the VIP) and `modules/dns` (zones, optionally created for a project, and record sets in local, owned or shared zones), with mocked tests.
