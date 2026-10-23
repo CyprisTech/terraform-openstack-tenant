@@ -184,7 +184,7 @@ Map key: instance name.
 > The module sets no `prevent_destroy`: Terraform does not allow lifecycle rules to depend on variables. Data that must survive the instance belongs in a volume created and protected outside the module, then attached with `existing`.
 
 > [!NOTE]
-> Changes to `user_data` are ignored on existing instances. To apply a new cloud-init configuration, replace the instance explicitly with `-replace`.
+> Changes to `user_data`, to the image (including a newer image published under the same name) and to `boot` are ignored on existing instances. To apply them, replace the instance explicitly with `-replace`.
 
 ## `load_balancers`
 
@@ -248,7 +248,7 @@ The building blocks take **IDs** instead of keys: wiring them together is the ca
 |---|---|---|
 | [`modules/network`](../modules/network) ✅ | `name`, `project_id`, `mtu`, `subnets` (as above), `routers` with `external_network_id`, `external_subnet_id`, `external_ip`, `internal_subnet`, `internal_ip`, `advertise_routes` | `id`, `name`, `subnets`, `routers` |
 | [`modules/security-group`](../modules/security-group) ✅ | `name`, `description`, `project_id`, `delete_default_rules`, `rules` with `remote_group_id` (an ID, or `"self"`) instead of `remote_group` | `id`, `name`, `rule_ids` |
-| `modules/instance` | `name`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `security_group_ids`, `floating_ip`, `dns` with `zone_id`; `volumes`; `user_data`; `metadata` | `id`, `ports` |
+| [`modules/instance`](../modules/instance) ✅ | `name`, `project_id`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `fixed_ip`, `security_group_ids`, `port_security_enabled`, `allowed_address_pairs`, `floating_ip` (`pool`, `subnet_id`, `dns`) and `dns` (entries `{ name, zone_id, zone_name, ttl }`); `volumes`; `user_data`; `key_pair`; `server_group_id`; `labels`; `metadata`; `default_ttl` | `id`, `name`, `az`, `labels`, `ports`, `volumes` |
 | `modules/loadbalancer` | `name`, `vip` with `subnet_id`, `topology`, `floating_ip`, `listeners` with members as `{ address, subnet_id }` | `id`, `vip`, `floating_ip` |
 | `modules/dns` | `zones`, `records` with `zone_id` | `zones` |
 | `modules/cloudinit` | `hostname`, `users`, `disks`, `packages` | `rendered` |

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Building block `modules/instance`: ports keyed by name (security groups, allowed address pairs, optional port security), boot from image, new volume or existing volume, created or attached data volumes, floating IPs, DNS records on fixed and floating addresses; fixed lifecycle rules; mocked tests.
 - Building blocks `modules/network` (network, subnets, routers attached through dedicated ports, host routes and advertised routes) and `modules/security-group` (rules keyed by name, `self` references), with mocked tests on OpenTofu and Terraform.
 - Specification of the `v0.1.0` interface: the composite's `tenant` variable with validation rules, a hand-written tenant model reference (`docs/tenant-model.md`) and six examples (`examples/`).
 - Repository skeleton: Apache-2.0 license, `.gitignore` blocking state, plan and `tfvars` files, EditorConfig, TFLint and pre-commit configuration (gitleaks, fmt, tflint, terraform-docs).
