@@ -1,0 +1,18 @@
+[Unit]
+Description=${description}
+After=local-fs.target${after != "" ? " ${after}" : ""}
+%{ if requires != "" ~}
+Requires=${requires}
+%{ endif ~}
+%{ if before != "" ~}
+Before=${before}
+%{ endif ~}
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=${exec}
+TimeoutStartSec=${timeout}
+
+[Install]
+WantedBy=multi-user.target
