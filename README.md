@@ -37,7 +37,7 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 | **Adoption** | Existing networks, subnets, security groups, DNS zones, boot and data volumes |
 | **Load balancing** | Octavia load balancers, listeners, pools, members, health monitors, topology, floating IP |
 | **DNS** | Designate zones owned by a tenant or shared with several, records on ports and floating IPs, free-form records |
-| **Bootstrap** | Idempotent cloud-init rendering (disks, mounts, users, packages) as a separate module |
+| **Bootstrap** | Cloud-init rendering as a separate module; data disks formatted only when empty and mounted by label at every boot |
 | **Composition** | Building blocks usable alone; a provider-neutral output contract for upper layers |
 
 ## How it works
@@ -181,7 +181,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 |---|---|---|
 | — | Repository skeleton, CI, documentation | done |
 | — | Examples and hand-written tenant model reference, as the interface specification | in review |
-| **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer`, `dns`; `modules/cloudinit`; tenant composite; output contract; tests on OpenTofu and Terraform, on a private and a public OpenStack cloud | planned |
+| **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer`, `dns`; `modules/cloudinit` ✅; tenant composite; output contract; tests on OpenTofu and Terraform, on a private and a public OpenStack cloud | planned |
 | **v0.2.0** | `modules/cloud-baseline` (admin level), tested on DevStack | planned |
 
 ## Reference

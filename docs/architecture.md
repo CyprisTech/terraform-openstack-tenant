@@ -111,4 +111,4 @@ Terraform does not allow `lifecycle` settings to depend on variables, so the mod
 
 ## Instance bootstrap
 
-`user_data` is an input. `modules/cloudinit` renders it from a typed description of disks, mounts, users and packages, using cloud-init's own idempotent directives (`fs_setup`, `mounts`, `users`) rather than shell commands.
+`user_data` is an input. `modules/cloudinit` renders it from a typed description of users, packages, files, disks and bind mounts. Data volumes are usually attached after the instance has booted, so each disk is handled by a systemd unit that waits for the device, formats it only when it holds no file system, and mounts it by label at every boot. See [the module README](../modules/cloudinit/README.md).

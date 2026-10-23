@@ -252,7 +252,7 @@ The modules configure **no backend, no state encryption, no locking, no secret s
 - **`lifecycle` cannot be configured by a variable**, so behaviours are fixed and documented:
   - `user_data` changes are ignored on existing instances (`ignore_changes = [user_data]`). To apply a new cloud-init, replace the instance explicitly (`-replace`).
   - The modules set **no `prevent_destroy`**. Data that must survive belongs in volumes created outside the module (by the caller, who can protect them with their own `lifecycle`) and adopted with `existing`.
-- `user_data` is an input, rendered by `modules/cloudinit` with portable, idempotent cloud-init directives (`fs_setup`, `mounts`, `users`).
+- `user_data` is an input, rendered by `modules/cloudinit`. Data volumes are attached after boot, so cloud-init's `fs_setup` and `mounts` would run before the device exists: each disk is handled by an idempotent systemd unit that waits for the device, formats it only when it holds no file system, and mounts it by label at every boot.
 - Security group rules keyed by name.
 - Octavia: `topology` is exposed; examples use TCP/HTTP health monitors; `PING` remains available.
 - Declared roles are applied as declared.
