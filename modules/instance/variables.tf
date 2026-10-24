@@ -42,13 +42,15 @@ variable "boot" {
   description = <<-EOT
     How the root disk is provided:
     - { source = "image" }: ephemeral root disk from the image (default).
-    - { source = "volume", size, volume_type }: root volume created from the image, deleted with the instance.
+    - { source = "volume", size, volume_type, az }: root volume created from the image by the module,
+      in Cinder availability zone az (defaults to the instance's), deleted with the instance.
     - { source = "existing", id or name }: boot from an existing volume, kept when the instance is deleted.
   EOT
   type = object({
     source      = optional(string, "image")
     size        = optional(number)
     volume_type = optional(string)
+    az          = optional(string)
     id          = optional(string)
     name        = optional(string)
   })

@@ -139,7 +139,7 @@ Map key: instance name.
 | `source` | Attributes | Behaviour |
 |---|---|---|
 | `"image"` | — | Ephemeral root disk from the image |
-| `"volume"` | `size`, `volume_type` | Root volume created from the image |
+| `"volume"` | `size`, `volume_type`, `az` | Root volume created from the image **by the module**, in Cinder zone `az` (defaults to the instance zone, which may differ from Cinder's); a newer image never recreates it |
 | `"existing"` | exactly one of `id`, `name` | Boot from an existing volume, for example to rebuild an instance on its surviving disk |
 
 **`ports.<key>`** — the first port in key order is the primary interface. The key `management` is reserved for the management port.

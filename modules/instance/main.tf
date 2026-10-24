@@ -2,8 +2,10 @@ locals {
   needs_image_lookup = var.image_id == null && var.image != null && var.boot.source == "volume"
   image_id           = local.needs_image_lookup ? data.openstack_images_image_v2.this[0].id : var.image_id
 
-  boot_volume_id = var.boot.source != "existing" ? null : (
-    var.boot.id != null ? var.boot.id : data.openstack_blockstorage_volume_v3.boot[0].id
+  boot_volume_id = (
+    var.boot.source == "volume" ? openstack_blockstorage_volume_v3.boot[0].id :
+    var.boot.source == "existing" ? (var.boot.id != null ? var.boot.id : data.openstack_blockstorage_volume_v3.boot[0].id) :
+    null
   )
 
   # Ports are attached in key order: the first key is the primary interface.
@@ -87,21 +89,10 @@ resource "openstack_compute_instance_v2" "this" {
   user_data         = var.user_data
   metadata          = local.metadata
 
+  # A root volume is always a Cinder volume referenced by ID: either created
+  # below with an explicit availability zone, or an existing one.
   dynamic "block_device" {
-    for_each = var.boot.source == "volume" ? [1] : []
-    content {
-      source_type           = "image"
-      uuid                  = local.image_id
-      destination_type      = "volume"
-      volume_size           = var.boot.size
-      volume_type           = var.boot.volume_type
-      boot_index            = 0
-      delete_on_termination = true
-    }
-  }
-
-  dynamic "block_device" {
-    for_each = var.boot.source == "existing" ? [1] : []
+    for_each = contains(["volume", "existing"], var.boot.source) ? [1] : []
     content {
       source_type           = "volume"
       uuid                  = local.boot_volume_id
@@ -141,6 +132,26 @@ resource "openstack_compute_instance_v2" "this" {
       condition     = var.boot.source == "existing" || ((var.image == null) != (var.image_id == null))
       error_message = "Set exactly one of image or image_id (not needed when boot.source is existing)."
     }
+  }
+}
+
+# The root volume is created here rather than by Nova (block_device with
+# source_type = "image"): Nova may not pass its availability zone to Cinder,
+# which then falls back to its own default zone and finds no backend (found
+# by integration tests). Cinder and Nova zones may also differ, hence boot.az.
+resource "openstack_blockstorage_volume_v3" "boot" {
+  count = var.boot.source == "volume" ? 1 : 0
+
+  name              = "${var.name}-root"
+  size              = var.boot.size
+  volume_type       = var.boot.volume_type
+  availability_zone = coalesce(var.boot.az, var.az)
+  image_id          = local.image_id
+
+  lifecycle {
+    # A newer image published under the same name must never recreate the
+    # root disk.
+    ignore_changes = [image_id]
   }
 }
 
