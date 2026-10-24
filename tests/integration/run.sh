@@ -42,28 +42,45 @@ echo "== stage=$(basename "$dir") action=$action tool=$tool cloud=$OS_CLOUD log=
 cd "$dir"
 "$tool" init -input=false >/dev/null
 
+# Summary written next to the log at the end of every run (git-ignored too).
+# Release notes in docs/testing.md are compiled from these summaries.
+started=$(date -u +%Y-%m-%dT%H:%M:%SZ); t0=$(date +%s)
+r_apply="-"; r_check="-"; r_destroy="-"
+summary() {
+  local tool_version provider_version
+  tool_version=$("$tool" version 2>/dev/null | head -1)
+  provider_version=$(grep -A1 'terraform-provider-openstack/openstack' .terraform.lock.hcl 2>/dev/null | sed -n 's/.*version *= *"\(.*\)"/\1/p' | head -1)
+  cat > "${log%.log}.summary.json" <<JSON
+{"stage": "$(basename "$dir")", "action": "$action", "started": "$started", "duration_s": $(( $(date +%s) - t0 )),
+ "tool": "$tool_version", "provider": "${provider_version:-unknown}",
+ "apply": "$r_apply", "check": "$r_check", "destroy": "$r_destroy"}
+JSON
+  echo "== summary: apply=$r_apply check=$r_check destroy=$r_destroy ($(( $(date +%s) - t0 ))s)"
+}
+trap summary EXIT
+
 check() {
   set +e
   "$tool" plan -detailed-exitcode "${vars[@]}"
   rc=$?
   set -e
   case $rc in
-    0) echo "== CHECK OK: empty plan after apply" ;;
-    2) echo "== CHECK FAILED: the plan after apply is not empty" ; return 1 ;;
-    *) echo "== CHECK ERROR: plan failed" ; return 1 ;;
+    0) echo "== CHECK OK: empty plan after apply" ; r_check=ok ;;
+    2) echo "== CHECK FAILED: the plan after apply is not empty" ; r_check=failed ; return 1 ;;
+    *) echo "== CHECK ERROR: plan failed" ; r_check=error ; return 1 ;;
   esac
 }
 
 case "$action" in
   plan)    "$tool" plan "${vars[@]}" ;;
-  apply)   "$tool" apply "${vars[@]}" "${approve[@]}" ;;
+  apply)   if "$tool" apply "${vars[@]}" "${approve[@]}"; then r_apply=ok; else r_apply=failed; exit 1; fi ;;
   check)   check ;;
-  destroy) "$tool" destroy "${vars[@]}" "${approve[@]}" ;;
+  destroy) if "$tool" destroy "${vars[@]}" "${approve[@]}"; then r_destroy=ok; else r_destroy=failed; exit 1; fi ;;
   full)
     rc=0
-    "$tool" apply "${vars[@]}" "${approve[@]}" || rc=$?
+    if "$tool" apply "${vars[@]}" "${approve[@]}"; then r_apply=ok; else r_apply=failed; rc=1; fi
     if [[ $rc -eq 0 ]]; then check || rc=$?; fi
-    "$tool" destroy "${vars[@]}" "${approve[@]}" || rc=$?
+    if "$tool" destroy "${vars[@]}" "${approve[@]}"; then r_destroy=ok; else r_destroy=failed; rc=1; fi
     exit $rc
     ;;
   *) echo "unknown action: $action" >&2; exit 2 ;;
