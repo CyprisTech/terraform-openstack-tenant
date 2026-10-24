@@ -219,7 +219,7 @@ The composite exposes outputs keyed like the input, with a fixed shape (absent v
 | Output | Content |
 |---|---|
 | `instances` | `<name> => { id, az, labels, ports = { <port> => { ip, floating_ip, fqdn } } }` (the management port appears under `management`) |
-| `networks` | `<name> => { id, subnets = { <subnet> => { id, cidr } } }` |
+| `networks` | `<name> => { id, subnets = { <subnet> => { id, cidr } }, routers = { <router> => { id, internal_ip } } }` |
 | `security_groups` | `<name> => { id }` |
 | `load_balancers` | `<name> => { id, vip, floating_ip, fqdns }` |
 | `dns_zones` | `<name> => { id, name }` |

@@ -15,11 +15,12 @@ output "instances" {
 }
 
 output "networks" {
-  description = "Networks created by the module, keyed like the input: { id, subnets = { <subnet> = { id, cidr } } }."
+  description = "Networks created by the module, keyed like the input: { id, subnets = { <subnet> = { id, cidr } }, routers = { <router> = { id, internal_ip } } }."
   value = {
     for k, m in module.network : k => {
       id      = m.id
       subnets = { for sk, s in m.subnets : sk => { id = s.id, cidr = s.cidr } }
+      routers = { for rk, r in m.routers : rk => { id = r.id, internal_ip = r.internal_ip } }
     }
   }
 }
