@@ -1,9 +1,12 @@
 resource "openstack_networking_network_v2" "this" {
-  name                    = var.name
-  tenant_id               = var.project_id
-  mtu                     = var.mtu
-  admin_state_up          = var.admin_state_up
-  availability_zone_hints = var.availability_zone_hints
+  name           = var.name
+  tenant_id      = var.project_id
+  mtu            = var.mtu
+  admin_state_up = var.admin_state_up
+  # An empty list must be sent as null: the provider treats [] as unset, reads
+  # the value back as unknown, and this attribute forces replacement, so every
+  # plan after apply would recreate the network (found by integration tests).
+  availability_zone_hints = length(var.availability_zone_hints) > 0 ? var.availability_zone_hints : null
 }
 
 resource "openstack_networking_subnet_v2" "this" {
@@ -33,7 +36,7 @@ resource "openstack_networking_router_v2" "this" {
   name                    = "${var.name}-${each.key}"
   tenant_id               = var.project_id
   admin_state_up          = each.value.admin_state_up
-  availability_zone_hints = each.value.availability_zone_hints
+  availability_zone_hints = length(each.value.availability_zone_hints) > 0 ? each.value.availability_zone_hints : null
   external_network_id     = each.value.external_network_id
 
   dynamic "external_fixed_ip" {
