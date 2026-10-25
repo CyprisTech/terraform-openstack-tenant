@@ -14,10 +14,10 @@ module "tenant" {
     existing = {
       networks = {
         ext     = { name = var.external_network }
-        transit = { name = var.second_external_network }
+        transit = { name = coalesce(var.second_external_network, var.external_network) }
       }
-      security_groups = { baseline = { name = var.shared_security_group } }
-      dns_zones       = { own = { name = var.zone_name } }
+      security_groups = { for k, g in { baseline = { name = var.shared_security_group } } : k => g if var.shared_security_group != null }
+      dns_zones       = { for k, z in { own = { name = var.zone_name } } : k => z if var.zone_name != null }
     }
 
     networks = {
@@ -53,12 +53,12 @@ module "tenant" {
         flavor          = var.flavor
         image           = var.image
         management_port = true
-        ports           = { main = { network = "it04-app", subnet = "main", security_groups = ["it04-app", "baseline"] } }
+        ports           = { main = { network = "it04-app", subnet = "main", security_groups = concat(["it04-app"], var.shared_security_group == null ? [] : ["baseline"]) } }
       }
     }
 
     dns = {
-      records = { alias = { zone = "own", name = "it04-alias", type = "CNAME", records = ["it04-app-1.${var.zone_name}"] } }
+      records = { for k, r in { alias = { zone = "own", name = "it04-alias", type = "CNAME", records = ["it04-app-1.${coalesce(var.zone_name, "-.")}"] } } : k => r if var.zone_name != null }
     }
   }
 }

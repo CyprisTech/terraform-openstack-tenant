@@ -13,7 +13,7 @@ module "tenant" {
   tenant = {
     existing = {
       networks  = { ext = { name = var.external_network } }
-      dns_zones = { shared = { name = var.shared_zone_name } }
+      dns_zones = { for k, z in { shared = { name = var.shared_zone_name } } : k => z if var.shared_zone_name != null }
     }
 
     networks = {
@@ -50,7 +50,8 @@ module "tenant" {
       it03-edge = {
         vip             = { network = "it03-net", subnet = "main" }
         security_groups = ["it03-lb"]
-        floating_ip     = { pool = "ext", dns = [{ name = "it03-edge", zone = "shared" }] }
+        flavor_id       = var.lb_flavor_id
+        floating_ip     = { pool = "ext", dns = [for d in [{ name = "it03-edge", zone = "shared" }] : d if var.shared_zone_name != null] }
         listeners = {
           ssh = {
             protocol = "TCP"

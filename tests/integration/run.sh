@@ -10,7 +10,9 @@
 #   full     apply, check, then destroy; destroy also runs if check fails
 #
 # Environment:
-#   OS_CLOUD      entry of clouds.yaml to use (default: tf-module-test)
+#   OS_CLOUD      entry of clouds.yaml to use (default: tf-module-test);
+#                 values come from env.<OS_CLOUD>.tfvars if present, else env.tfvars,
+#                 and each cloud gets its own workspace (state)
 #   TOOL          tofu or terraform (default: tofu)
 #   AUTO_APPROVE  1 to skip confirmations
 #
@@ -23,24 +25,28 @@ stage="${1:?usage: run.sh <stage> <plan|apply|check|destroy|full>}"
 action="${2:?usage: run.sh <stage> <plan|apply|check|destroy|full>}"
 dir="$here/${stage%/}"
 [[ -d "$dir" ]] || { echo "unknown stage: $stage" >&2; exit 2; }
-[[ -f "$here/env.tfvars" ]] || { echo "missing $here/env.tfvars (copy env.tfvars.example)" >&2; exit 2; }
-
 cloud="${OS_CLOUD:-tf-module-test}"
+# Values per cloud: env.<cloud>.tfvars if present, otherwise env.tfvars.
+envfile="$here/env.$cloud.tfvars"
+[[ -f "$envfile" ]] || envfile="$here/env.tfvars"
+[[ -f "$envfile" ]] || { echo "missing $here/env.tfvars or env.$cloud.tfvars (copy env.tfvars.example)" >&2; exit 2; }
 for v in $(compgen -e | grep '^OS_' || true); do unset "$v"; done
 export OS_CLOUD="$cloud"
 
 tool="${TOOL:-tofu}"
-vars=(-input=false -var-file="$here/env.tfvars")
+vars=(-input=false -var-file="$envfile")
 approve=()
 [[ "${AUTO_APPROVE:-0}" == "1" ]] && approve=(-auto-approve)
 
 mkdir -p "$here/.logs"
 log="$here/.logs/$(basename "$dir")-$(date -u +%Y%m%dT%H%M%SZ)-$action.log"
 exec > >(tee -a "$log") 2>&1
-echo "== stage=$(basename "$dir") action=$action tool=$tool cloud=$OS_CLOUD log=$log"
+echo "== stage=$(basename "$dir") action=$action tool=$tool cloud=$OS_CLOUD values=$(basename "$envfile") log=$log"
 
 cd "$dir"
 "$tool" init -input=false >/dev/null
+# One state per cloud, so that runs on different clouds never share a state.
+"$tool" workspace select -or-create "$cloud" >/dev/null
 
 # Summary written next to the log at the end of every run (git-ignored too).
 # Release notes in docs/testing.md are compiled from these summaries.

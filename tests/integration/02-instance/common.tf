@@ -21,7 +21,7 @@ variable "external_network" {
 }
 
 variable "second_external_network" {
-  description = "Name of a second external network, reached through a second router (stage 04)."
+  description = "Name of a second external network, reached through a second router (stage 04); null reuses external_network."
   type        = string
   default     = null
 }
@@ -53,17 +53,19 @@ variable "flavor_nodisk" {
 }
 
 variable "zone_name" {
-  description = "DNS zone owned by the test project (with trailing dot)."
+  description = "DNS zone owned by the test project (with trailing dot); null on clouds without Designate."
   type        = string
+  default     = null
 }
 
 variable "shared_zone_name" {
-  description = "DNS zone owned by another project and shared with the test project (with trailing dot)."
+  description = "DNS zone owned by another project and shared with the test project (with trailing dot); null to skip."
   type        = string
+  default     = null
 }
 
 variable "shared_security_group" {
-  description = "Name of a security group shared with the test project, adopted by name (stage 04)."
+  description = "Name of a security group shared with the test project, adopted by name (stage 04); null to skip."
   type        = string
   default     = null
 }
@@ -72,4 +74,10 @@ variable "dns_nameservers" {
   description = "DNS resolvers pushed by DHCP to the test subnets."
   type        = list(string)
   default     = []
+}
+
+variable "lb_flavor_id" {
+  description = "Octavia flavor ID for stage 03; null uses the cloud default."
+  type        = string
+  default     = null
 }

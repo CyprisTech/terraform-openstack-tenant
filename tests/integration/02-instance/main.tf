@@ -19,7 +19,7 @@ module "tenant" {
   tenant = {
     existing = {
       networks  = { ext = { name = var.external_network } }
-      dns_zones = { own = { name = var.zone_name } }
+      dns_zones = { for k, z in { own = { name = var.zone_name } } : k => z if var.zone_name != null }
     }
 
     networks = {
@@ -48,8 +48,8 @@ module "tenant" {
             network         = "it02-net"
             subnet          = "main"
             security_groups = ["it02-ssh"]
-            floating_ip     = { pool = "ext", dns = [{ name = "it02-vm", zone = "own" }] }
-            dns             = [{ name = "it02-vm-int", zone = "own" }]
+            floating_ip     = { pool = "ext", dns = [for d in [{ name = "it02-vm", zone = "own" }] : d if var.zone_name != null] }
+            dns             = [for d in [{ name = "it02-vm-int", zone = "own" }] : d if var.zone_name != null]
           }
         }
         volumes = { data = { size = 1 } }
