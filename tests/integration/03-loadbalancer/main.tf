@@ -18,7 +18,7 @@ module "tenant" {
 
     networks = {
       it03-net = {
-        subnets = { main = { cidr = "192.168.153.0/24" } }
+        subnets = { main = { cidr = "192.168.153.0/24", dns_nameservers = var.dns_nameservers } }
         routers = { out = { external_network = "ext", internal_subnet = "main" } }
       }
     }

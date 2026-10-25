@@ -13,7 +13,7 @@ module "tenant" {
 
     networks = {
       it01-net = {
-        subnets = { main = { cidr = "192.168.151.0/24", gateway_ip = "192.168.151.1" } }
+        subnets = { main = { cidr = "192.168.151.0/24", dns_nameservers = var.dns_nameservers, gateway_ip = "192.168.151.1" } }
         routers = { out = { external_network = "ext", internal_subnet = "main" } }
       }
     }

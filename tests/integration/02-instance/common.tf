@@ -67,3 +67,9 @@ variable "shared_security_group" {
   type        = string
   default     = null
 }
+
+variable "dns_nameservers" {
+  description = "DNS resolvers pushed by DHCP to the test subnets."
+  type        = list(string)
+  default     = []
+}

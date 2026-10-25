@@ -22,14 +22,14 @@ module "tenant" {
 
     networks = {
       it04-app = {
-        subnets = { main = { cidr = "192.168.154.0/24" } }
+        subnets = { main = { cidr = "192.168.154.0/24", dns_nameservers = var.dns_nameservers } }
         routers = {
           a-out     = { external_network = "ext", internal_subnet = "main" }
           b-transit = { external_network = "transit", internal_subnet = "main", advertise_routes = [var.second_external_cidr] }
         }
       }
       it04-mgmt = {
-        subnets = { main = { cidr = "192.168.155.0/24" } }
+        subnets = { main = { cidr = "192.168.155.0/24", dns_nameservers = var.dns_nameservers } }
       }
     }
 
