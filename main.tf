@@ -40,11 +40,6 @@ locals {
     ]...),
   )
 
-  # Subnet keys of every network, to pick a default subnet when none is given.
-  subnet_keys = merge(
-    { for k, n in local.ex.networks : k => sort(keys(n.subnets)) },
-    { for k, n in local.t.networks : k => sort(keys(n.subnets)) },
-  )
 
   security_group_ids = merge(
     local.existing_security_group_ids,
@@ -74,26 +69,7 @@ locals {
     }
   ]...)
 
-  # ---------------------------------------------------------------------------
-  # Instances: ports, with the optional management port under the reserved
-  # key "management".
-  # ---------------------------------------------------------------------------
-
-  instance_ports = {
-    for ik, i in local.t.instances : ik => merge(
-      { for pk, p in i.ports : pk => merge(p, { security_groups = p.security_groups }) },
-      i.management_port ? {
-        management = {
-          network         = local.t.management_port.network
-          subnet          = coalesce(local.t.management_port.subnet, local.subnet_keys[local.t.management_port.network][0])
-          fixed_ip        = null
-          security_groups = concat(local.t.management_port.security_groups, i.management_egress ? local.t.management_port.egress_security_groups : [])
-          floating_ip     = null
-          dns             = []
-        }
-      } : {},
-    )
-  }
+  instance_ports = { for ik, i in local.t.instances : ik => i.ports }
 }
 
 # -----------------------------------------------------------------------------
@@ -213,6 +189,20 @@ module "dns" {
   }
 }
 
+resource "openstack_compute_servergroup_v2" "this" {
+  for_each = local.t.server_groups
+
+  name     = each.key
+  policies = [each.value.policy]
+
+  dynamic "rules" {
+    for_each = each.value.max_server_per_host == null ? [] : [1]
+    content {
+      max_server_per_host = each.value.max_server_per_host
+    }
+  }
+}
+
 module "instance" {
   source   = "./modules/instance"
   for_each = local.t.instances
@@ -229,6 +219,8 @@ module "instance" {
   labels      = each.value.labels
   metadata    = each.value.metadata
   default_ttl = local.t.defaults.ttl
+
+  server_group_id = each.value.server_group == null ? null : openstack_compute_servergroup_v2.this[each.value.server_group].id
 
   ports = {
     for pk, p in local.instance_ports[each.key] : pk => {

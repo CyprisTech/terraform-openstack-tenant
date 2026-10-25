@@ -42,15 +42,15 @@ variables {
       web = { rules = { from-lb = { direction = "ingress", protocol = "tcp", port_min = 8443, port_max = 8443, remote_group = "lb" }, peers = { direction = "ingress", remote_group = "web" } } }
     }
 
-    management_port = { network = "management", security_groups = ["ssh"] }
+    server_groups = { web = { policy = "soft-anti-affinity" } }
 
     instances = {
       for n in ["web-1", "web-2"] : n => {
-        az              = "nova"
-        flavor          = "m1.small"
-        image           = "ubuntu-24.04"
-        management_port = true
-        labels          = ["web"]
+        az           = "nova"
+        flavor       = "m1.small"
+        image        = "ubuntu-24.04"
+        server_group = "web"
+        labels       = ["web"]
         ports = {
           main = {
             network         = "app"
@@ -58,6 +58,7 @@ variables {
             security_groups = ["web"]
             dns             = [{ name = n, zone = "app" }]
           }
+          mgmt = { network = "management", subnet = "site-a", security_groups = ["ssh"] }
         }
       }
     }
@@ -92,8 +93,13 @@ run "single_plan_on_a_complete_tenant" {
   }
 
   assert {
-    condition     = toset(keys(module.instance["web-1"].ports)) == toset(["main", "management"])
-    error_message = "The management port is added under the reserved key."
+    condition     = toset(keys(module.instance["web-1"].ports)) == toset(["main", "mgmt"])
+    error_message = "A second port on another network is just another port."
+  }
+
+  assert {
+    condition     = openstack_compute_servergroup_v2.this["web"].policies == tolist(["soft-anti-affinity"])
+    error_message = "Server groups are created with their policy."
   }
 
   assert {

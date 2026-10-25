@@ -3,9 +3,9 @@
 # external network (default gateway, first in key order) and "transit" to a
 # second external network, advertising a route; security groups with a rule
 # between local groups; an adopted shared security group (by name); 1 instance
-# with a management port on the mgmt network; 1 free DNS record (CNAME).
+# with a second port on the mgmt network; 1 free DNS record (CNAME).
 # Checks: empty plan after apply; host route present on the app subnet; the
-# management port exists under the key "management".
+# second port exists under the key "mgmt".
 
 module "tenant" {
   source = "../../.."
@@ -45,15 +45,16 @@ module "tenant" {
       }
     }
 
-    management_port = { network = "it04-mgmt", security_groups = ["it04-mgmt"] }
 
     instances = {
       it04-app-1 = {
-        az              = var.az
-        flavor          = var.flavor
-        image           = var.image
-        management_port = true
-        ports           = { main = { network = "it04-app", subnet = "main", security_groups = concat(["it04-app"], var.shared_security_group == null ? [] : ["baseline"]) } }
+        az     = var.az
+        flavor = var.flavor
+        image  = var.image
+        ports = {
+          main = { network = "it04-app", subnet = "main", security_groups = concat(["it04-app"], var.shared_security_group == null ? [] : ["baseline"]) }
+          mgmt = { network = "it04-mgmt", subnet = "main", security_groups = ["it04-mgmt"] }
+        }
       }
     }
 
