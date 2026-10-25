@@ -143,7 +143,7 @@ Every attribute of the model is documented in the [tenant model reference](docs/
 | OpenTofu | >= 1.6 | 1.6.3 and latest |
 | Terraform | >= 1.6 | 1.6.6 and latest |
 | Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` from `v0.1.0` (pre-release code: `~> 1.53`) | pinned minimum and latest |
-| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1 (stages 01-03 passing, see [docs/testing.md](docs/testing.md)); public OpenStack cloud planned; DevStack for `cloud-baseline` |
+| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1 (all 4 stages passing, see [docs/testing.md](docs/testing.md)); public OpenStack cloud planned; DevStack for `cloud-baseline` |
 
 ## Operating the module
 

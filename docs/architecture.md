@@ -134,7 +134,7 @@ Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
 
 ## Known limitations
 
-- **Real cloud tests in progress.** Stages 01 to 03 pass on a private OpenStack 2025.1 cloud, stage 04 and a public cloud are pending; see [testing](testing.md).
+- **Real cloud tests in progress.** All four stages pass on a private OpenStack 2025.1 cloud; a public cloud run is pending; see [testing](testing.md).
 - **No server groups in the composite.** `modules/instance` accepts `server_group_id`, but the composite does not yet create affinity or anti-affinity groups (useful to spread two reverse proxies over two hosts).
 - **TLS termination on Octavia** (`TERMINATED_HTTPS`) needs Barbican container references, not exposed yet; TCP passthrough with the PROXY protocol is supported.
 - **One fixed address per port**, IPv4 or IPv6 without router advertisement settings; no ports without a fixed IP.
