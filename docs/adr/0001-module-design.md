@@ -110,17 +110,14 @@ tenant = {
     }
   }
 
-  management_port? = {                                       # optional dedicated management network
-    network = "management", subnet?, security_groups = ["ssh", "dhcp"],
-    egress_security_groups? = ["ssh-egress"]
-  }
+  server_groups? = { web = { policy? = "anti-affinity", max_server_per_host? } }  # spread replicas over hosts
 
   instances? = {
     web-1 = {
       flavor? | flavor_id?, az, image? | image_id?
       boot? = { source = "image" }                           # or { source = "volume", size, volume_type? }
                                                              # or { source = "existing", id? | name? }
-      management_port? = true, management_egress? = false
+      server_group? = "web"
       ports = {
         private = {
           network = "private", subnet = "main", fixed_ip?
@@ -221,6 +218,29 @@ DNS zones are never transferred between projects after creation. A zone transfer
 
 Outputs expose the IDs of every created object, keyed like the input, so that tenants can adopt them by injection (D2).
 
+**Adoption in `cloud-baseline`** (added 2026-10-25, for v0.2). An administrator almost never starts from an empty cloud. The baseline therefore takes the same `existing` section as the tenant, by ID or by name, for the objects it references without owning them:
+
+```hcl
+baseline = {
+  existing? = {
+    projects = { legacy = { id? | name? } }   # receive quotas, shares, zones, roles
+    users    = { alice  = { id? | name? } }   # from LDAP or federation: receive roles, never created
+    groups   = { ops    = { id? | name? } }
+    networks = { ext    = { id? | name? } }   # created by the deployment tool: receive subnets, shares
+    images   = { ubuntu = { id? | name? } }   # built by an image pipeline: shared with projects
+  }
+  # role_assignments, share_with, dns_zones.*.project and images.*.share_with accept keys of
+  # created or adopted objects alike.
+}
+```
+
+Two needs are kept apart:
+
+- **Adoption**: referencing an object that stays managed elsewhere (the `existing` section above).
+- **Takeover**: bringing an object created by hand under the baseline's management. This is done with `import` blocks and documented in a guide ("taking over an existing cloud"), not in the model.
+
+Image sharing also needs the project-side acceptance (`openstack_images_image_access_accept_v2`) to be visible to projects with the `member` role; integration tests showed that a `shared` image without accepted members is invisible to them.
+
 ### D5. Stable keys: one plan, no `-target`
 
 - `for_each` collections and keys come **only from the input**, never from attributes computed at apply time. Values passed to resources may be unknown at plan time; keys may not.
@@ -260,7 +280,7 @@ The modules configure **no backend, no state encryption, no locking, no secret s
 ### D10. No site-specific defaults
 
 - No topological default values. `validation` blocks on CIDRs, names, protocols, methods, discriminator fields and cross-references (a router's `external_network` must exist in `existing.networks`).
-- Conventions become options: `management_port`, shared security group catalog, default TTL.
+- Conventions become options: shared security group catalog, default TTL. A site convention such as a dedicated management network is not an option of the model: it is one more port, added by the caller (an earlier draft had a `management_port` option, removed before v0.1.0 as too specific).
 
 ### D11. Provider-neutral output contract
 

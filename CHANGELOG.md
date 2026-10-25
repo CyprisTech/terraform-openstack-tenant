@@ -8,9 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Server groups in the composite (`server_groups`, `instances.*.server_group`): anti-affinity, affinity, soft variants, `max_server_per_host`.
 - Integration tests on a real OpenStack cloud (`tests/integration/`), with a summary per run.
 - Routers: `default_gateway`; when no router of a subnet sets an address, the first router in key order takes the subnet's gateway address.
-- Composite validation of subnet, VIP and management port references.
+- Composite validation of subnet and VIP references.
 - Documentation: implementation map and known limitations in the architecture guide; README usage rewritten for the implemented interface.
 - Tenant composite (root module): resolves keys to IDs for adopted and created objects, calls the building blocks, creates rules between local security groups, adds the management port, wires load balancer members to instance ports, and exposes the provider-neutral output contract (`instances`, `networks`, `security_groups`, `load_balancers`, `dns_zones`). Mocked test of a single plan on a complete tenant.
 - CI validates every example on both tools; TFLint runs recursively, warnings included.
@@ -35,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
+- `management_port` and `instances.*.management_port` / `management_egress`: a site convention rather than a general feature. A second port is declared in `ports`; see `examples/adopt-existing` for adding the same port to every instance.
 - The pre-redesign code; it remains available in the history.
 
 [Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/commits/main
