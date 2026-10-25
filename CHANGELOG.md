@@ -8,12 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Example `three-tier-ha`: web, application and data tiers isolated by security groups, bastion, Octavia with PROXY protocol, anti-affinity server groups, data volumes, an inventory output for the configuration layer, and a README explaining the decisions and their trade-offs.
 - Server groups in the composite (`server_groups`, `instances.*.server_group`): anti-affinity, affinity, soft variants, `max_server_per_host`.
 - Integration tests on a real OpenStack cloud (`tests/integration/`), with a summary per run.
 - Routers: `default_gateway`; when no router of a subnet sets an address, the first router in key order takes the subnet's gateway address.
 - Composite validation of subnet and VIP references.
 - Documentation: implementation map and known limitations in the architecture guide; README usage rewritten for the implemented interface.
-- Tenant composite (root module): resolves keys to IDs for adopted and created objects, calls the building blocks, creates rules between local security groups, adds the management port, wires load balancer members to instance ports, and exposes the provider-neutral output contract (`instances`, `networks`, `security_groups`, `load_balancers`, `dns_zones`). Mocked test of a single plan on a complete tenant.
+- Tenant composite (root module): resolves keys to IDs for adopted and created objects, calls the building blocks, creates rules between local security groups, wires load balancer members to instance ports, and exposes the provider-neutral output contract (`instances`, `networks`, `security_groups`, `load_balancers`, `dns_zones`). Mocked test of a single plan on a complete tenant.
 - CI validates every example on both tools; TFLint runs recursively, warnings included.
 - Building blocks `modules/loadbalancer` (Octavia load balancer, listeners, pools, members keyed by name, health monitors, floating IP and DNS records on the VIP) and `modules/dns` (zones, optionally created for a project, and record sets in local, owned or shared zones), with mocked tests.
 - Module `modules/cloudinit`: cloud-config rendering (hostname, users, packages, files, commands); data disks handled by idempotent systemd units that wait for the device, format only when empty, refuse partitioned devices and mount by label at every boot; bind mounts; tests.

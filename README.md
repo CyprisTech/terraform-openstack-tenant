@@ -132,6 +132,7 @@ The [examples](examples/README.md) are complete root configurations, validated i
 | [`adopt-existing`](examples/adopt-existing) | Adoption by ID and by name of networks, security groups, DNS zones and volumes |
 | [`layered-network-compute`](examples/layered-network-compute) | Network and compute layers in separate states, connected through `existing` |
 | [`public-edge`](examples/public-edge) | Octavia in front of reverse proxies, PROXY protocol, DNS on the floating IP |
+| [`three-tier-ha`](examples/three-tier-ha) | Reference architecture: isolated tiers, bastion, load balancer, anti-affinity, data volumes, with the trade-offs explained |
 | [`building-blocks`](examples/building-blocks) | The building blocks used directly, without the composite |
 
 Every attribute of the model is documented in the [tenant model reference](docs/tenant-model.md).
