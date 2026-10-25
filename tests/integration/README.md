@@ -20,7 +20,8 @@ These tests apply the composite on a **real OpenStack cloud**, check that the pl
       region_name: RegionOne
   ```
 - In that project: an external network usable as router gateway and floating IP pool, an image with cloud-init, two small flavors (one with a local disk, one without), a DNS zone owned by the project, a DNS zone shared with the project (stage 03), and a shared security group (stage 04).
-- `env.tfvars`: copy [`env.tfvars.example`](env.tfvars.example) and adapt it. It is git-ignored.
+- `env.tfvars`: copy [`env.tfvars.example`](env.tfvars.example) and adapt it. It is git-ignored. For several clouds, use one file per `clouds.yaml` entry, `env.<cloud>.tfvars`: `run.sh` picks it when `OS_CLOUD=<cloud>`, and keeps one workspace (state) per cloud.
+- Optional features: leave `zone_name` and `shared_zone_name` unset on clouds without Designate, and `shared_security_group` unset when no shared group exists; `second_external_network` defaults to `external_network`.
 
 ## Running
 
