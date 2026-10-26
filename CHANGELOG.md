@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-26
+
+First published release. Fixes the minimum versions declared by `v0.1.0`.
+
 ### Fixed
 
 - Minimum versions: OpenTofu and Terraform `>= 1.9`, not `>= 1.6`. The building blocks use a variable validation that refers to another variable, which both tools support from 1.9; `v0.1.0` declared 1.6 and failed to validate on 1.6 to 1.8.
@@ -51,5 +55,6 @@ First release: the tenant layers (building blocks, composite, output contract), 
 - `management_port` and `instances.*.management_port` / `management_egress`: a site convention rather than a general feature. A second port is declared in `ports`; see `examples/adopt-existing` for adding the same port to every instance.
 - The pre-redesign code; it remains available in the history.
 
-[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/CyprisTech/terraform-openstack-tenant/releases/tag/v0.1.0

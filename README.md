@@ -8,7 +8,7 @@
 OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**, on any OpenStack cloud, public or private, without admin rights: networks, routers, security groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects created elsewhere (shared networks, security group catalogs, DNS zones, volumes) can be **adopted** instead of recreated.
 
 > [!NOTE]
-> **First release, `v0.1.0`.** The tenant layers are tested with mocked providers on OpenTofu and Terraform, and on a real OpenStack 2025.1 cloud ([test report](docs/testing.md)). Tests on a public OpenStack cloud come next. Before `v1.0.0`, minor versions may change the interface; the [changelog](CHANGELOG.md) gives migration notes. Evaluate it on a test project before relying on it in production.
+> **First releases, `v0.1.x`.** The tenant layers are tested with mocked providers on OpenTofu and Terraform, and on a real OpenStack 2025.1 cloud ([test report](docs/testing.md)). Tests on a public OpenStack cloud come next. Before `v1.0.0`, minor versions may change the interface; the [changelog](CHANGELOG.md) gives migration notes. Evaluate it on a test project before relying on it in production.
 
 ## Table of contents
 
@@ -76,7 +76,7 @@ With credentials scoped to the project (a member role is enough):
 
 ```hcl
 module "tenant" {
-  source = "github.com/CyprisTech/terraform-openstack-tenant?ref=v0.1.0"
+  source = "github.com/CyprisTech/terraform-openstack-tenant?ref=v0.1.1"
 
   tenant = {
     # Resources are created in the project of the provider's credentials.
@@ -167,6 +167,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | — | Repository skeleton, CI, documentation | done |
 | — | Examples and hand-written tenant model reference, as the interface specification | done |
 | **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer` ✅, `dns` ✅; `modules/cloudinit` ✅; tenant composite ✅ with server groups; output contract ✅; `three-tier-ha` reference example; mocked tests on OpenTofu and Terraform; integration tests on a private OpenStack cloud | released |
+| v0.1.1 | Minimum versions corrected to OpenTofu and Terraform 1.9; validation fix; mocked tests on the lowest supported versions | released |
 | v0.1.x | Integration results on a public OpenStack cloud; fixes they reveal | next |
 | **v0.2.0** | `modules/cloud-baseline` (admin level), tested on DevStack | planned |
 
