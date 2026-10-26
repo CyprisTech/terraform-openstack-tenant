@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Integration tests on a real OpenStack cloud (`tests/integration/`), with a summary per run.
 - Routers: `default_gateway`; when no router of a subnet sets an address, the first router in key order takes the subnet's gateway address.
 - Composite validation of subnet, VIP and management port references.
 - Documentation: implementation map and known limitations in the architecture guide; README usage rewritten for the implemented interface.
@@ -25,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Instances booting from a new volume: the root volume is created by the module with an explicit Cinder availability zone (`boot.az`), instead of by Nova, which may not pass its zone to Cinder. Found by integration tests.
+- Empty `availability_zone_hints` are sent as null; the provider read them back as unknown and recreated networks and routers on every plan. Found by integration tests.
 - The composite no longer creates its project (`project`, `role_assignments` removed): Nova creates instances only in the project of the token. Project creation belongs to `cloud-baseline`.
 - Adopted DNS zones always give their `name` (it builds record names); `id` is optional.
 - `floating_ip.pool` is a key of `existing.networks`, like every other reference.

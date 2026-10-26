@@ -29,3 +29,6 @@ terraform.rc
 .*.sw*
 .idea/
 .vscode/
+
+# Integration test logs (may contain addresses of the test cloud)
+tests/integration/.logs/

@@ -76,6 +76,7 @@ variable "tenant" {
         source      = optional(string, "image") # "image", "volume" or "existing"
         size        = optional(number)
         volume_type = optional(string)
+        az          = optional(string) # Cinder availability zone of a created root volume
         id          = optional(string)
         name        = optional(string)
       }), {})

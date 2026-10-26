@@ -111,8 +111,25 @@ run "boot_from_new_volume" {
   }
 
   assert {
-    condition     = length(openstack_compute_instance_v2.this.block_device) == 1 && openstack_compute_instance_v2.this.block_device[0].source_type == "image" && openstack_compute_instance_v2.this.block_device[0].delete_on_termination
-    error_message = "A new root volume is created from the image and deleted with the instance."
+    condition     = length(openstack_blockstorage_volume_v3.boot) == 1 && openstack_blockstorage_volume_v3.boot[0].availability_zone == "nova" && openstack_compute_instance_v2.this.block_device[0].source_type == "volume"
+    error_message = "A new root volume is created by the module in an explicit availability zone, then booted from."
+  }
+}
+
+run "boot_volume_in_another_zone" {
+  command = plan
+
+  module {
+    source = "./modules/instance"
+  }
+
+  variables {
+    boot = { source = "volume", size = 30, az = "cinder-az" }
+  }
+
+  assert {
+    condition     = openstack_blockstorage_volume_v3.boot[0].availability_zone == "cinder-az" && openstack_compute_instance_v2.this.availability_zone == "nova"
+    error_message = "The root volume may live in a Cinder zone different from the Nova zone."
   }
 }
 
