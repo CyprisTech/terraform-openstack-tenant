@@ -288,7 +288,7 @@ The composite exposes outputs that upper layers (cluster bootstrap, configuratio
 
 ### D12. Compatibility
 
-- **OpenTofu ≥ 1.6 and Terraform ≥ 1.6**, on equal footing. CI validates both tools at their lowest supported and latest versions. Test tooling may require newer versions; this does not constrain users.
+- **OpenTofu ≥ 1.9 and Terraform ≥ 1.9**, on equal footing. CI validates and tests both tools at their lowest supported and latest versions. 1.9 is the first version of both tools where a variable validation may refer to another variable, which the building blocks use.
 - Provider `terraform-provider-openstack/openstack ~> 3.2` (zone sharing).
 
 ### D13. Repository layout

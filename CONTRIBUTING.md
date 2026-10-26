@@ -14,7 +14,7 @@ By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 | Tool | Purpose | Version |
 |---|---|---|
-| [OpenTofu](https://opentofu.org/docs/intro/install/) and/or [Terraform](https://developer.hashicorp.com/terraform/install) | validate and test | >= 1.6 (tests need OpenTofu >= 1.8 or Terraform >= 1.7) |
+| [OpenTofu](https://opentofu.org/docs/intro/install/) and/or [Terraform](https://developer.hashicorp.com/terraform/install) | validate and test | >= 1.9 |
 | [TFLint](https://github.com/terraform-linters/tflint) | lint | latest |
 | [terraform-docs](https://terraform-docs.io) | generate the README reference | >= 0.19 |
 | [pre-commit](https://pre-commit.com) | run checks before each commit | latest |
