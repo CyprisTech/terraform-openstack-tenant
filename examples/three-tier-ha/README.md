@@ -41,7 +41,7 @@ Server groups: `web` and `app` use soft anti-affinity, `data` uses hard anti-aff
 
 **Web tier rule from the subnet range.** The amphora reaches members from its own address in the member subnet, not from the VIP port, so a `remote_group = "lb"` rule would never match. The web group therefore accepts port 8443 from the subnet range. The other tiers do not listen on 8443. On a cloud that publishes the amphora subnet, restrict the rule to it.
 
-**Hard anti-affinity only where losing two replicas loses data.** With `anti-affinity`, Nova refuses to schedule a data instance when no free host remains: deployment fails rather than putting both copies on one host. The stateless tiers use `soft-anti-affinity`, which spreads instances when it can and still schedules them on a small cloud. Server group policies cannot change after creation: changing one replaces the group and its instances.
+**Hard anti-affinity only where losing two replicas loses data.** With `anti-affinity`, Nova refuses to schedule a data instance when no free host remains: deployment fails rather than putting both copies on one host. The stateless tiers use `soft-anti-affinity`, which spreads instances when it can and still schedules them on a small cloud. It is a preference only: in the integration run, both `app` instances landed on the same host while another host had room. Server group policies cannot change after creation: changing one replaces the group and its instances.
 
 **Two of everything, one bastion.** The bastion is not redundant: losing it stops administration, not the service. Rebuild it with `-replace` when needed.
 

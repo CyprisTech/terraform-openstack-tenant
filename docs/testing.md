@@ -23,6 +23,15 @@ Mocked tests cannot see how a real cloud and the provider behave (attributes rea
 | `03-loadbalancer` | ✅ | ✅ | ✅ | 551 s (amphora build ~2 min) | Load balancer and both members `ONLINE`, TCP monitor `ONLINE`; record written in a zone shared with the project; rule between local security groups. **Re-run 2026-10-26** after the `v0.1` changes (soft anti-affinity server group on the web members): 25 resources, full cycle 654 s, all ✅ |
 | `04-complete` | ✅ | ✅ | ✅ | 46 s | Two routers on one subnet: the first holds the gateway address, the second gets an allocated address and its advertised route reaches the instance through DHCP; adopted shared security group on a port; second port on another network; rule between local groups; CNAME record. **Re-run 2026-10-26** after `management_port` was replaced by a plain port: 21 resources, full cycle 66 s, all ✅ |
 
+#### Example `three-tier-ha` (2026-10-26)
+
+Applied from `examples/three-tier-ha` on the same cloud: 51 resources in 130 s, **empty plan after apply**, 51 destroyed in 90 s.
+
+- Hard anti-affinity: `data-1` and `data-2` on two different hosts. Soft anti-affinity: `web-1` and `web-2` on two hosts, but `app-1` and `app-2` on the same host while another host had room. Soft anti-affinity is a scheduler weight, not a guarantee, and instances created in parallel can land together. Use `anti-affinity` when separation matters.
+- Load balancer `ACTIVE`, members in `ERROR` as expected: the example installs no application, so nothing listens on port 8443.
+- A records for `www` (load balancer) and `bastion` written in the project zone.
+- Not verified: SSH through the bastion (volume mount on the data tier, isolation between tiers). The test runner could not reach the bastion's floating IP over SSH from its network; this is being investigated on the cloud side.
+
 ### Public cloud (OVHcloud Public Cloud, region BHS5), October 2026
 
 **Status:** blocked by the project quotas, not by the module. A new project has Neutron quotas `security_group = 0` and `security_group_rule = 0` (only the `default` group exists), so the first security group fails with `409 OverQuota`. The Control panel only offers compute quota tiers through a prepaid credit; a support request for the two network quotas is in progress.

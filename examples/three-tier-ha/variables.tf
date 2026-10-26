@@ -33,3 +33,9 @@ variable "zone_name" {
   type        = string
   default     = null
 }
+
+variable "dns_nameservers" {
+  description = "DNS resolvers given to the instances by DHCP."
+  type        = list(string)
+  default     = ["9.9.9.9", "1.1.1.1"]
+}

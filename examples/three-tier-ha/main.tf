@@ -43,7 +43,7 @@ module "tenant" {
 
     networks = {
       app = {
-        subnets = { main = { cidr = local.cidr, dns_nameservers = ["9.9.9.9"] } }
+        subnets = { main = { cidr = local.cidr, dns_nameservers = var.dns_nameservers } }
         routers = { out = { external_network = "ext", internal_subnet = "main" } }
       }
     }
