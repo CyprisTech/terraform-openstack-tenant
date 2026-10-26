@@ -1,6 +1,6 @@
 # Stage 03 — Octavia in front of two instances.
 # Creates: network + router, 2 security groups (one referencing the other),
-# 2 instances booting from the image, 1 load balancer (default Octavia
+# 1 server group (soft anti-affinity), 2 instances booting from the image, 1 load balancer (default Octavia
 # flavor), 1 TCP listener on port 22 with a TCP health monitor (sshd answers
 # without any extra software), 1 floating IP on the VIP, 1 DNS record in the
 # zone shared with the project.
@@ -37,12 +37,17 @@ module "tenant" {
       }
     }
 
+    # Soft anti-affinity: spread the two members over two hosts when possible,
+    # without failing on a cloud with a single compute host.
+    server_groups = { it03-web = { policy = "soft-anti-affinity" } }
+
     instances = {
       for n in ["it03-web-1", "it03-web-2"] : n => {
-        az     = var.az
-        flavor = var.flavor
-        image  = var.image
-        ports  = { main = { network = "it03-net", subnet = "main", security_groups = ["it03-web"] } }
+        server_group = "it03-web"
+        az           = var.az
+        flavor       = var.flavor
+        image        = var.image
+        ports        = { main = { network = "it03-net", subnet = "main", security_groups = ["it03-web"] } }
       }
     }
 

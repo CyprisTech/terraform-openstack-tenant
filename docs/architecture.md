@@ -124,7 +124,7 @@ Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
 | No dependency of a module on its own outputs | `main.tf`: adopted-only tables (`local.existing_*`) passed to `module.network` and `module.security_group`; `openstack_networking_secgroup_rule_v2.cross_group` for rules between local groups |
 | Stable keys (one plan, no `-target`) | every `for_each` in `modules/*/main.tf` and `main.tf`; DNS keys `<port>/<fixed\|floating>/<name>@<zone_name>`, LB members `<listener>/<member>`, host routes `<subnet>/<destination>` |
 | Several routers per subnet, default gateway | `modules/network/main.tf`: dedicated router ports, `local.gateway_router` |
-| Management port convention | `main.tf`: `local.instance_ports` (reserved key `management`) |
+| Server groups (anti-affinity) | `main.tf`: `openstack_compute_servergroup_v2.this`, passed to `modules/instance` as `server_group_id` |
 | Fixed lifecycle rules | `modules/instance/main.tf`: `ignore_changes = [user_data, image_id, image_name, block_device]`, no `prevent_destroy` |
 | Data disks attached after boot | `modules/cloudinit/templates/disk-setup.sh.tftpl` and `unit.service.tftpl` |
 | Octavia flavor instead of topology | `modules/loadbalancer`: `flavor_id` |
@@ -135,7 +135,7 @@ Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
 ## Known limitations
 
 - **Real cloud tests in progress.** All four stages pass on a private OpenStack 2025.1 cloud; a public cloud run is pending; see [testing](testing.md).
-- **No server groups in the composite.** `modules/instance` accepts `server_group_id`, but the composite does not yet create affinity or anti-affinity groups (useful to spread two reverse proxies over two hosts).
+- **One internal subnet per router.** A router connects one subnet of a network; a single router serving several subnets is not modelled yet (use one router per subnet, or segment tiers with security groups on one subnet, as in [`examples/three-tier-ha`](../examples/three-tier-ha)).
 - **TLS termination on Octavia** (`TERMINATED_HTTPS`) needs Barbican container references, not exposed yet; TCP passthrough with the PROXY protocol is supported.
 - **One fixed address per port**, IPv4 or IPv6 without router advertisement settings; no ports without a fixed IP.
 - **Security group rules between local groups** are created by the composite itself, outside `modules/security-group`; their addresses in the state reflect that.

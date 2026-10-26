@@ -46,3 +46,8 @@ output "dns_zones" {
   description = "DNS zones created by the module, keyed like the input: { id, name }."
   value       = module.dns.zones
 }
+
+output "server_groups" {
+  description = "Server groups keyed like the input: { id, policy }."
+  value       = { for k, g in openstack_compute_servergroup_v2.this : k => { id = g.id, policy = one(g.policies) } }
+}

@@ -20,7 +20,7 @@ This page documents every attribute of the `tenant` variable of the composite mo
 | [`existing`](#existing) | object | `{}` | Objects owned elsewhere, adopted by ID or name |
 | [`networks`](#networks) | map | `{}` | Networks, subnets and routers created in the project |
 | [`security_groups`](#security_groups) | map | `{}` | Security groups and their rules |
-| [`management_port`](#management_port) | object | `null` | Optional dedicated management network for instances |
+| [`server_groups`](#server_groups) | map | `{}` | Nova server groups (anti-affinity...) referenced by instances |
 | [`instances`](#instances) | map | `{}` | Instances, their ports, volumes and DNS records |
 | [`load_balancers`](#load_balancers) | map | `{}` | Octavia load balancers (requires Octavia) |
 | [`dns`](#dns) | object | `{}` | Zones and free-form records (requires Designate) |
@@ -105,16 +105,17 @@ Map key: security group name.
 
 Rules are keyed by name, so adding or removing one never recreates the others.
 
-## `management_port`
+## `server_groups`
 
-An optional convention: every instance with `management_port = true` gets an extra port on a dedicated management network, with its own security groups.
+Map key: server group name. Instances reference a group with `server_group`.
 
 | Attribute | Type | Default | Description |
 |---|---|---|---|
-| `network` | string | required | Key in `networks` or `existing.networks` |
-| `subnet` | string | any | Subnet key |
-| `security_groups` | list(string) | required | Applied to every management port |
-| `egress_security_groups` | list(string) | `[]` | Added when the instance sets `management_egress = true` |
+| `policy` | string | `"anti-affinity"` | `anti-affinity` (members on different hosts, scheduling fails otherwise), `affinity`, `soft-anti-affinity` (spread when possible), `soft-affinity` |
+| `max_server_per_host` | number | — | With `anti-affinity` only: allow up to N members per host |
+
+> [!TIP]
+> Prefer `soft-anti-affinity` when the cloud may have fewer hosts than replicas: hard `anti-affinity` makes the extra instances fail to schedule.
 
 ## `instances`
 
@@ -126,8 +127,7 @@ Map key: instance name.
 | `flavor` / `flavor_id` | string | — | **Exactly one of**: flavor name or ID |
 | `image` / `image_id` | string | — | Image name or ID; required unless `boot.source = "existing"` |
 | `boot` | object | `{ source = "image" }` | See below |
-| `management_port` | bool | `false` | Add a port on the `management_port` network |
-| `management_egress` | bool | `false` | Also apply `management_port.egress_security_groups` |
+| `server_group` | string | — | Key in `server_groups` |
 | `ports` | map | required | See below |
 | `volumes` | map | `{}` | See below |
 | `user_data` | string | `null` | Cloud-init data, for example from `modules/cloudinit` |
@@ -142,7 +142,7 @@ Map key: instance name.
 | `"volume"` | `size`, `volume_type`, `az` | Root volume created from the image **by the module**, in Cinder zone `az` (defaults to the instance zone, which may differ from Cinder's); a newer image never recreates it |
 | `"existing"` | exactly one of `id`, `name` | Boot from an existing volume, for example to rebuild an instance on its surviving disk |
 
-**`ports.<key>`** — the first port in key order is the primary interface. The key `management` is reserved for the management port.
+**`ports.<key>`** — the first port in key order is the primary interface. A second port on another network (management, storage, backup) is just another entry; to add the same port to every instance, merge it in the caller (see [`examples/adopt-existing`](../examples/adopt-existing)).
 
 | Attribute | Type | Default | Description |
 |---|---|---|---|
@@ -218,7 +218,8 @@ The composite exposes outputs keyed like the input, with a fixed shape (absent v
 
 | Output | Content |
 |---|---|
-| `instances` | `<name> => { id, az, labels, ports = { <port> => { ip, floating_ip, fqdn } } }` (the management port appears under `management`) |
+| `instances` | `<name> => { id, az, labels, ports = { <port> => { ip, floating_ip, fqdn } } }` |
+| `server_groups` | `<name> => { id, policy }` |
 | `networks` | `<name> => { id, subnets = { <subnet> => { id, cidr } }, routers = { <router> => { id, internal_ip } } }` |
 | `security_groups` | `<name> => { id }` |
 | `load_balancers` | `<name> => { id, vip, floating_ip, fqdns }` |

@@ -59,12 +59,11 @@ variable "tenant" {
       })), {})
     })), {})
 
-    management_port = optional(object({
-      network                = string # key in networks or existing.networks
-      subnet                 = optional(string)
-      security_groups        = list(string)
-      egress_security_groups = optional(list(string), [])
-    }))
+    # Nova server groups, to spread (or pack) instances across compute hosts.
+    server_groups = optional(map(object({
+      policy              = optional(string, "anti-affinity") # anti-affinity | affinity | soft-anti-affinity | soft-affinity
+      max_server_per_host = optional(number)                  # anti-affinity only
+    })), {})
 
     instances = optional(map(object({
       az        = string
@@ -80,8 +79,7 @@ variable "tenant" {
         id          = optional(string)
         name        = optional(string)
       }), {})
-      management_port   = optional(bool, false)
-      management_egress = optional(bool, false)
+      server_group = optional(string) # key in server_groups
       ports = map(object({
         network         = string
         subnet          = string
@@ -213,7 +211,6 @@ variable "tenant" {
     condition = alltrue(concat(
       flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : [for g in p.security_groups : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), g)]]]),
       flatten([for lb in values(var.tenant.load_balancers) : [for g in lb.security_groups : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), g)]]),
-      [for g in concat(try(var.tenant.management_port.security_groups, []), try(var.tenant.management_port.egress_security_groups, [])) : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), g)],
       flatten([for sg in values(var.tenant.security_groups) : [for r in values(sg.rules) : contains(concat(keys(var.tenant.security_groups), keys(var.tenant.existing.security_groups)), r.remote_group) if r.remote_group != null]]),
     ))
     error_message = "Every security group reference must be a key of tenant.security_groups or tenant.existing.security_groups."
@@ -234,7 +231,7 @@ variable "tenant" {
         for l in values(lb.listeners) : [
           for m in l.pool.members :
           length(split(".", m)) == 2 && contains(keys(var.tenant.instances), split(".", m)[0]) &&
-          contains(concat(keys(try(var.tenant.instances[split(".", m)[0]].ports, {})), try(var.tenant.instances[split(".", m)[0]].management_port, false) ? ["management"] : []), try(split(".", m)[1], ""))
+          contains(keys(try(var.tenant.instances[split(".", m)[0]].ports, {})), try(split(".", m)[1], ""))
         ]
       ]
     ]))
@@ -242,13 +239,16 @@ variable "tenant" {
   }
 
   validation {
-    condition     = var.tenant.management_port != null || alltrue([for i in values(var.tenant.instances) : !i.management_port])
-    error_message = "An instance sets management_port = true but tenant.management_port is not defined."
+    condition     = alltrue([for i in values(var.tenant.instances) : i.server_group == null || contains(keys(var.tenant.server_groups), coalesce(i.server_group, "-"))])
+    error_message = "Each instance server_group must be a key of tenant.server_groups."
   }
 
   validation {
-    condition     = alltrue([for i in values(var.tenant.instances) : !contains(keys(i.ports), "management") || !i.management_port])
-    error_message = "The port key \"management\" is reserved for the management port."
+    condition = alltrue([
+      for g in values(var.tenant.server_groups) :
+      contains(["anti-affinity", "affinity", "soft-anti-affinity", "soft-affinity"], g.policy) && (g.max_server_per_host == null || g.policy == "anti-affinity")
+    ])
+    error_message = "server_groups.*.policy must be anti-affinity, affinity, soft-anti-affinity or soft-affinity; max_server_per_host applies to anti-affinity only."
   }
 
   validation {
@@ -267,13 +267,5 @@ variable "tenant" {
   validation {
     condition     = alltrue([for lb in values(var.tenant.load_balancers) : contains(concat(keys(var.tenant.networks), keys(var.tenant.existing.networks)), lb.vip.network)])
     error_message = "Each load balancer vip.network must be a key of tenant.networks or tenant.existing.networks."
-  }
-
-  validation {
-    condition = var.tenant.management_port == null || (
-      contains(concat(keys(var.tenant.networks), keys(var.tenant.existing.networks)), try(var.tenant.management_port.network, "")) &&
-      length(keys(try(var.tenant.networks[var.tenant.management_port.network].subnets, var.tenant.existing.networks[var.tenant.management_port.network].subnets, {}))) > 0
-    )
-    error_message = "management_port.network must be a key of tenant.networks or tenant.existing.networks with at least one declared subnet."
   }
 }

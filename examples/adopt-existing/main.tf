@@ -3,6 +3,15 @@
 # - by name, for objects that already exist and are looked up.
 # Runs with a member role on the project; the project is the one of the token.
 
+locals {
+  # A dedicated management network is a common convention in private clouds.
+  # The module has no special option for it: it is one more port, which the
+  # caller can add to every instance with a merge.
+  management_port = {
+    mgmt = { network = "management", subnet = "site-a", security_groups = ["ssh", "dhcp", "ssh-out"] }
+  }
+}
+
 module "tenant" {
   source = "../.."
 
@@ -46,22 +55,17 @@ module "tenant" {
       }
     }
 
-    management_port = {
-      network                = "management"
-      security_groups        = ["ssh", "dhcp"]
-      egress_security_groups = ["ssh-out"]
-    }
 
     instances = {
       db-1 = {
         az     = "site-a"
         flavor = "m1.large"
 
-        management_port = true
-        boot            = { source = "existing", name = "db-1-root" } # rebuild on a surviving root volume
-        ports = {
-          main = { network = "app", subnet = "main", fixed_ip = "10.20.5.30", security_groups = ["monitors"] }
-        }
+        boot = { source = "existing", name = "db-1-root" } # rebuild on a surviving root volume
+        ports = merge(
+          { main = { network = "app", subnet = "main", fixed_ip = "10.20.5.30", security_groups = ["monitors"] } },
+          local.management_port, # same extra port on every instance, see locals above
+        )
         volumes = {
           data = { existing = { id = var.db_data_volume_id } } # created and protected outside the module
         }

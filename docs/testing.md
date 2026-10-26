@@ -20,8 +20,20 @@ Mocked tests cannot see how a real cloud and the provider behave (attributes rea
 |---|---|---|---|---|---|
 | `01-network` | ✅ | ✅ | ✅ | 21 s (full run) | The only router of the subnet holds the subnet's gateway address |
 | `02-instance` | ✅ | ✅ | ✅ | 119 s | Boot from a module-created root volume; data disk formatted and mounted by the `disk-data` unit; A records on the fixed and floating addresses |
-| `03-loadbalancer` | ✅ | ✅ | ✅ | 551 s (amphora build ~2 min) | Load balancer and both members `ONLINE`, TCP monitor `ONLINE`; record written in a zone shared with the project; rule between local security groups |
-| `04-complete` | ✅ | ✅ | ✅ | 46 s | Two routers on one subnet: the first holds the gateway address, the second gets an allocated address and its advertised route reaches the instance through DHCP; adopted shared security group on a port; management port on a second network; rule between local groups; CNAME record |
+| `03-loadbalancer` | ✅ | ✅ | ✅ | 551 s (amphora build ~2 min) | Load balancer and both members `ONLINE`, TCP monitor `ONLINE`; record written in a zone shared with the project; rule between local security groups. **Re-run 2026-10-26** after the `v0.1` changes (soft anti-affinity server group on the web members): 25 resources, full cycle 654 s, all ✅ |
+| `04-complete` | ✅ | ✅ | ✅ | 46 s | Two routers on one subnet: the first holds the gateway address, the second gets an allocated address and its advertised route reaches the instance through DHCP; adopted shared security group on a port; second port on another network; rule between local groups; CNAME record. **Re-run 2026-10-26** after `management_port` was replaced by a plain port: 21 resources, full cycle 66 s, all ✅ |
+
+#### Example `three-tier-ha` (2026-10-26)
+
+Applied from `examples/three-tier-ha` on the same cloud: 51 resources in 130 s, **empty plan after apply**, 51 destroyed in 90 s.
+
+- Hard anti-affinity: `data-1` and `data-2` on two different hosts. Soft anti-affinity: `web-1` and `web-2` on two hosts, but `app-1` and `app-2` on the same host while another host had room. Soft anti-affinity is a scheduler weight, not a guarantee, and instances created in parallel can land together. Use `anti-affinity` when separation matters.
+- Load balancer `ACTIVE`, members in `ERROR` as expected: the example installs no application, so nothing listens on port 8443.
+- A records for `www` (load balancer) and `bastion` written in the project zone.
+- Second run, kept up for checks: SSH through the bastion works once `admin_cidrs` covers the address the cloud's routers use on the external network (here a router address in the external subnet, not the operator's own address). Verified through the bastion:
+  - both data instances mount `/dev/vdb` (ext4, label `data`) on `/var/lib/postgresql` through the `disk-data` unit;
+  - isolation between tiers, by connection result (refused = allowed by the security groups, nothing listening; timeout = dropped): app → data 5432 refused, data → data 5432 refused, web → app 8080 refused, web → data 5432 timeout, data → app 8080 timeout, web → data 22 timeout.
+- The load balancer went to `ERROR` once during creation (cloud-side, Octavia); the same configuration rebuilt with `-replace` reached `ACTIVE`. A load balancer in `ERROR` can block refresh: Octavia removes its VIP port, and the provider then fails to read it (`PortNotFound`). Recovery: `tofu apply -refresh-only -target=<other resources>`, then `tofu apply -refresh=false -replace=<load balancer address>`. See the [operations guide](operations.md).
 
 ### Public cloud (OVHcloud Public Cloud, region BHS5), October 2026
 
