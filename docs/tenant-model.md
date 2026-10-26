@@ -3,7 +3,7 @@
 This page documents every attribute of the `tenant` variable of the composite module, and the inputs of the building blocks. The design behind it is in [ADR-0001](adr/0001-module-design.md). Examples live in [`examples/`](../examples/README.md).
 
 > [!NOTE]
-> Status: implemented on `main` for `v0.1.0` (tested with mocked providers; real cloud tests pending). The interface is declared in [`variables.tf`](../variables.tf).
+> Status: released in `v0.1.0` (mocked tests on OpenTofu and Terraform; integration tests on a private OpenStack cloud, see [testing.md](testing.md)). The interface is declared in [`variables.tf`](../variables.tf).
 
 ## Conventions
 
