@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-26
+
+First release: the tenant layers (building blocks, composite, output contract), tested with mocked providers on OpenTofu and Terraform and on a private OpenStack 2025.1 cloud.
+
 ### Added
 
 - Example `three-tier-ha`: web, application and data tiers isolated by security groups, bastion, Octavia with PROXY protocol, anti-affinity server groups, data volumes, an inventory output for the configuration layer, and a README explaining the decisions and their trade-offs.
@@ -40,4 +44,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `management_port` and `instances.*.management_port` / `management_egress`: a site convention rather than a general feature. A second port is declared in `ports`; see `examples/adopt-existing` for adding the same port to every instance.
 - The pre-redesign code; it remains available in the history.
 
-[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/commits/main
+[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/CyprisTech/terraform-openstack-tenant/releases/tag/v0.1.0

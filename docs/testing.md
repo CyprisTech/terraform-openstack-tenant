@@ -11,7 +11,7 @@ Mocked tests cannot see how a real cloud and the provider behave (attributes rea
 
 ## Integration results
 
-### Pre-release (`main` before `v0.1.0`), October 2026
+### `v0.1.0`, October 2026
 
 **Cloud:** private cloud, OpenStack 2025.1 deployed with OpenStack-Ansible (Nova, Neutron with OVN, Cinder LVM, Glance, Octavia amphora, Designate). Project-scoped application credential with the `member` and `load-balancer_member` roles.
 **Tools:** OpenTofu 1.13.2, provider `terraform-provider-openstack/openstack` 3.4.0.

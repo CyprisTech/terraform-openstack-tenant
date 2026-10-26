@@ -1,10 +1,10 @@
 # ADR-0001: Module design
 
-- **Status:** Proposed
+- **Status:** Accepted (released in `v0.1.0`, 2026-10-26)
 - **Date:** 2026-10-21
 - **Deciders:** Gregory Gabrielian
 
-An *Architecture Decision Record* (ADR) captures one design decision, its context and its consequences. This ADR is revised in place until the first release; afterwards, changes go through new ADRs.
+An *Architecture Decision Record* (ADR) captures one design decision, its context and its consequences. This ADR was revised in place until the first release; from `v0.1.0` on, changes go through new ADRs.
 
 ## Context
 

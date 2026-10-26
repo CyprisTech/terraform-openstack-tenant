@@ -3,7 +3,7 @@
 Each example is a complete root configuration. Credentials come from `clouds.yaml`; select the cloud with `OS_CLOUD`.
 
 > [!NOTE]
-> Every example is validated in CI with OpenTofu and Terraform. They have not yet been applied on a real cloud; that is the last step before `v0.1.0`.
+> Every example is validated in CI with OpenTofu and Terraform. [`three-tier-ha`](three-tier-ha) has also been applied on a real OpenStack cloud; the building blocks used by the others are covered by the [integration tests](../docs/testing.md).
 
 | Example | Shows | Credentials | Services |
 |---|---|---|---|

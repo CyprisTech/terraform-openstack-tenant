@@ -134,7 +134,7 @@ Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
 
 ## Known limitations
 
-- **Real cloud tests in progress.** All four stages pass on a private OpenStack 2025.1 cloud; a public cloud run is pending; see [testing](testing.md).
+- **No public cloud results yet.** All four integration stages and the `three-tier-ha` example pass on a private OpenStack 2025.1 cloud; the public cloud run comes in a `v0.1.x` release; see [testing](testing.md).
 - **One internal subnet per router.** A router connects one subnet of a network; a single router serving several subnets is not modelled yet (use one router per subnet, or segment tiers with security groups on one subnet, as in [`examples/three-tier-ha`](../examples/three-tier-ha)).
 - **TLS termination on Octavia** (`TERMINATED_HTTPS`) needs Barbican container references, not exposed yet; TCP passthrough with the PROXY protocol is supported.
 - **One fixed address per port**, IPv4 or IPv6 without router advertisement settings; no ports without a fixed IP.

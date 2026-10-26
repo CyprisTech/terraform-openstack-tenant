@@ -7,8 +7,8 @@
 
 OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**, on any OpenStack cloud, public or private, without admin rights: networks, routers, security groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects created elsewhere (shared networks, security group catalogs, DNS zones, volumes) can be **adopted** instead of recreated.
 
-> [!WARNING]
-> **Pre-release.** The tenant layers of `v0.1.0` are implemented on `main` and tested with mocked providers on OpenTofu and Terraform; tests on real clouds are pending (see [Roadmap](#roadmap)). The interface may still change until `v0.1.0`. Do not use it in production yet.
+> [!NOTE]
+> **First release, `v0.1.0`.** The tenant layers are tested with mocked providers on OpenTofu and Terraform, and on a real OpenStack 2025.1 cloud ([test report](docs/testing.md)). Tests on a public OpenStack cloud come next. Before `v1.0.0`, minor versions may change the interface; the [changelog](CHANGELOG.md) gives migration notes. Evaluate it on a test project before relying on it in production.
 
 ## Table of contents
 
@@ -70,7 +70,7 @@ Three principles drive the design (details in [docs/architecture.md](docs/archit
 ## Usage
 
 > [!NOTE]
-> Pin a release with `?ref=` once `v0.1.0` is published.
+> Pin a release with `?ref=`.
 
 With credentials scoped to the project (a member role is enough):
 
@@ -143,8 +143,8 @@ Every attribute of the model is documented in the [tenant model reference](docs/
 |---|---|---|
 | OpenTofu | >= 1.6 | 1.6.3 and latest |
 | Terraform | >= 1.6 | 1.6.6 and latest |
-| Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` from `v0.1.0` (pre-release code: `~> 1.53`) | pinned minimum and latest |
-| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1 (all 4 stages passing, see [docs/testing.md](docs/testing.md)); public OpenStack cloud planned; DevStack for `cloud-baseline` |
+| Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` | pinned minimum and latest; 3.4.0 on a real cloud |
+| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1: the 4 integration stages and the `three-tier-ha` example (see [docs/testing.md](docs/testing.md)); public OpenStack cloud next; DevStack for `cloud-baseline` |
 
 ## Operating the module
 
@@ -165,8 +165,9 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | Release | Content | Status |
 |---|---|---|
 | — | Repository skeleton, CI, documentation | done |
-| — | Examples and hand-written tenant model reference, as the interface specification | in review |
-| **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer` ✅, `dns` ✅; `modules/cloudinit` ✅; tenant composite ✅; output contract ✅; tests on OpenTofu and Terraform, on a private and a public OpenStack cloud | planned |
+| — | Examples and hand-written tenant model reference, as the interface specification | done |
+| **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer` ✅, `dns` ✅; `modules/cloudinit` ✅; tenant composite ✅ with server groups; output contract ✅; `three-tier-ha` reference example; mocked tests on OpenTofu and Terraform; integration tests on a private OpenStack cloud | released |
+| v0.1.x | Integration results on a public OpenStack cloud; fixes they reveal | next |
 | **v0.2.0** | `modules/cloud-baseline` (admin level), tested on DevStack | planned |
 
 ## Reference
