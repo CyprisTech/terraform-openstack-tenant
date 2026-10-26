@@ -70,7 +70,12 @@ module "tenant" {
       }
       # Administration: SSH only through the bastion.
       bastion = {
-        rules = { ssh = { direction = "ingress", protocol = "tcp", port_min = 22, port_max = 22, remote_ip_prefix = var.admin_cidr } }
+        # Keyed by the CIDR itself, so adding a range never touches the others.
+        rules = {
+          for c in var.admin_cidrs : "ssh-${replace(replace(c, ".", "-"), "/", "-")}" => {
+            direction = "ingress", protocol = "tcp", port_min = 22, port_max = 22, remote_ip_prefix = c
+          }
+        }
       }
       from-bastion = {
         rules = { ssh = { direction = "ingress", protocol = "tcp", port_min = 22, port_max = 22, remote_group = "bastion" } }

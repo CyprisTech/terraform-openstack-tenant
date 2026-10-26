@@ -30,7 +30,10 @@ Applied from `examples/three-tier-ha` on the same cloud: 51 resources in 130 s, 
 - Hard anti-affinity: `data-1` and `data-2` on two different hosts. Soft anti-affinity: `web-1` and `web-2` on two hosts, but `app-1` and `app-2` on the same host while another host had room. Soft anti-affinity is a scheduler weight, not a guarantee, and instances created in parallel can land together. Use `anti-affinity` when separation matters.
 - Load balancer `ACTIVE`, members in `ERROR` as expected: the example installs no application, so nothing listens on port 8443.
 - A records for `www` (load balancer) and `bastion` written in the project zone.
-- Not verified: SSH through the bastion (volume mount on the data tier, isolation between tiers). The test runner could not reach the bastion's floating IP over SSH from its network; this is being investigated on the cloud side.
+- Second run, kept up for checks: SSH through the bastion works once `admin_cidrs` covers the address the cloud's routers use on the external network (here a router address in the external subnet, not the operator's own address). Verified through the bastion:
+  - both data instances mount `/dev/vdb` (ext4, label `data`) on `/var/lib/postgresql` through the `disk-data` unit;
+  - isolation between tiers, by connection result (refused = allowed by the security groups, nothing listening; timeout = dropped): app → data 5432 refused, data → data 5432 refused, web → app 8080 refused, web → data 5432 timeout, data → app 8080 timeout, web → data 22 timeout.
+- The load balancer went to `ERROR` once during creation (cloud-side, Octavia); the same configuration rebuilt with `-replace` reached `ACTIVE`. A load balancer in `ERROR` can block refresh: Octavia removes its VIP port, and the provider then fails to read it (`PortNotFound`). Recovery: `tofu apply -refresh-only -target=<other resources>`, then `tofu apply -refresh=false -replace=<load balancer address>`. See the [operations guide](operations.md).
 
 ### Public cloud (OVHcloud Public Cloud, region BHS5), October 2026
 

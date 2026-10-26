@@ -23,9 +23,9 @@ variable "ssh_public_key" {
   type        = string
 }
 
-variable "admin_cidr" {
-  description = "CIDR allowed to reach the bastion over SSH."
-  type        = string
+variable "admin_cidrs" {
+  description = "CIDRs allowed to reach the bastion over SSH, for example the office range and the VPN range."
+  type        = list(string)
 }
 
 variable "zone_name" {

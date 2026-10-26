@@ -5,7 +5,7 @@ A reference layout for a web application in a single OpenStack project, with a m
 ```mermaid
 flowchart LR
     users(["Users"]) -->|"HTTPS 443"| fip1["Floating IP<br/>www"]
-    admins(["Admins<br/>admin_cidr"]) -->|"SSH 22"| fip2["Floating IP<br/>bastion"]
+    admins(["Admins<br/>admin_cidrs"]) -->|"SSH 22"| fip2["Floating IP<br/>bastion"]
 
     subgraph project["Project: one network, one subnet 10.30.0.0/24"]
         fip1 --> lb["Octavia load balancer<br/>TCP 443, PROXY to members"]
@@ -27,7 +27,7 @@ Server groups: `web` and `app` use soft anti-affinity, `data` uses hard anti-aff
 | Concern | How it is handled |
 |---------|-------------------|
 | Isolation between tiers | One security group per tier. Each tier accepts traffic only from the group of the tier above it (`remote_group`), not from an address range. Adding an instance to a tier needs no rule change. |
-| Administration | SSH reaches the bastion only from `admin_cidr`. Other instances accept SSH only from the `bastion` group. Only the bastion and the load balancer have a floating IP. |
+| Administration | SSH reaches the bastion only from `admin_cidrs`. Other instances accept SSH only from the `bastion` group. Only the bastion and the load balancer have a floating IP. |
 | Availability | Two instances per tier, spread over compute hosts by server groups. The load balancer checks the web members with a TCP health monitor. |
 | Data | Each data instance has its own volume, formatted only when empty and mounted at every boot by `modules/cloudinit`. Rebuilding an instance keeps the volume. |
 | Hand-off to configuration | The `inventory` output groups private addresses by tier label, ready for an Ansible inventory or another configuration tool. The module installs no application. |
@@ -56,7 +56,7 @@ az               = "nova"
 image            = "ubuntu-24.04"
 flavor           = "m1.small"
 ssh_public_key   = "ssh-ed25519 AAAA... ops"
-admin_cidr       = "203.0.113.0/24"
+admin_cidrs      = ["203.0.113.0/24"]
 zone_name        = null   # or "example.org." when the project owns the zone
 TFVARS
 

@@ -55,3 +55,27 @@ Common implementations: GitLab CI or GitHub Actions jobs, Atlantis, Flux with to
 - The baseline stack needs a cloud `admin` role. Keep it separate from tenant pipelines.
 - Tenant stacks need only a member role on their project; [application credentials](https://docs.openstack.org/keystone/latest/user/application_credentials.html) scoped to the project are a good fit for pipelines.
 - Configure the provider with `clouds.yaml` and `OS_CLOUD`, or with `OS_*` environment variables. Never hard-code credentials in configuration files.
+
+## Recovering a load balancer in `ERROR`
+
+Octavia can leave a load balancer in `ERROR` when an amphora fails to build. It then removes the VIP port, and every later plan fails while reading the load balancer:
+
+```text
+Error getting port security groups for openstack_lb_loadbalancer_v2: ... PortNotFound
+```
+
+The failed load balancer is already marked as tainted in the state. Rebuild it without refreshing it:
+
+```bash
+# 1. Refresh everything else (state only, no change to the cloud).
+tofu apply -refresh-only -target='module.tenant.module.instance'
+
+# 2. Replace the load balancer; listeners, pools, members and the floating IP association follow.
+tofu plan  -refresh=false -replace='module.tenant.module.loadbalancer["edge"].openstack_lb_loadbalancer_v2.this' -out=lb.tfplan
+tofu apply lb.tfplan
+
+# 3. Back to normal: the next plan refreshes everything and must be empty.
+tofu plan -detailed-exitcode
+```
+
+Step 1 matters: without it, `-refresh=false` compares the configuration with a state that was never read back, and the plan shows in-place changes on instances (for example `scheduler_hints`) that do not exist on the cloud.
