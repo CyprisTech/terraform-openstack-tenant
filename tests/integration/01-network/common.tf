@@ -2,7 +2,7 @@
 # The same variables are shared by every stage (one env.tfvars); each stage uses a subset.
 
 terraform {
-  required_version = ">= 1.6"
+  required_version = ">= 1.9"
 
   required_providers {
     openstack = {

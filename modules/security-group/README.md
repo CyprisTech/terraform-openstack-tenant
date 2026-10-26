@@ -21,7 +21,7 @@ Set `delete_default_rules = true` to drop the egress rules Neutron adds to every
 
 | Name | Version |
 | ---- | ------- |
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.6 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9 |
 | <a name="requirement_openstack"></a> [openstack](#requirement\_openstack) | ~> 3.2 |
 
 ## Providers

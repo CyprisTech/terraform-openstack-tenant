@@ -126,8 +126,10 @@ variable "listeners" {
     error_message = "listeners.*.pool.protocol must be TCP, UDP, SCTP, HTTP, HTTPS, PROXY or PROXYV2."
   }
 
+  # try(): older OpenTofu and Terraform versions evaluate both sides of ||, so
+  # "monitor == null || monitor.type ..." fails when there is no monitor.
   validation {
-    condition     = alltrue([for l in values(var.listeners) : l.pool.monitor == null || contains(["PING", "TCP", "HTTP", "HTTPS", "TLS-HELLO", "UDP-CONNECT", "SCTP"], l.pool.monitor.type)])
+    condition     = alltrue([for l in values(var.listeners) : contains(["PING", "TCP", "HTTP", "HTTPS", "TLS-HELLO", "UDP-CONNECT", "SCTP"], try(l.pool.monitor.type, "TCP"))])
     error_message = "listeners.*.pool.monitor.type must be PING, TCP, HTTP, HTTPS, TLS-HELLO, UDP-CONNECT or SCTP."
   }
 
