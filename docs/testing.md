@@ -20,8 +20,8 @@ Mocked tests cannot see how a real cloud and the provider behave (attributes rea
 |---|---|---|---|---|---|
 | `01-network` | ✅ | ✅ | ✅ | 21 s (full run) | The only router of the subnet holds the subnet's gateway address |
 | `02-instance` | ✅ | ✅ | ✅ | 119 s | Boot from a module-created root volume; data disk formatted and mounted by the `disk-data` unit; A records on the fixed and floating addresses |
-| `03-loadbalancer` | ✅ | ✅ | ✅ | 551 s (amphora build ~2 min) | Load balancer and both members `ONLINE`, TCP monitor `ONLINE`; record written in a zone shared with the project; rule between local security groups |
-| `04-complete` | ✅ | ✅ | ✅ | 46 s | Two routers on one subnet: the first holds the gateway address, the second gets an allocated address and its advertised route reaches the instance through DHCP; adopted shared security group on a port; management port on a second network; rule between local groups; CNAME record |
+| `03-loadbalancer` | ✅ | ✅ | ✅ | 551 s (amphora build ~2 min) | Load balancer and both members `ONLINE`, TCP monitor `ONLINE`; record written in a zone shared with the project; rule between local security groups. **Re-run 2026-10-26** after the `v0.1` changes (soft anti-affinity server group on the web members): 25 resources, full cycle 654 s, all ✅ |
+| `04-complete` | ✅ | ✅ | ✅ | 46 s | Two routers on one subnet: the first holds the gateway address, the second gets an allocated address and its advertised route reaches the instance through DHCP; adopted shared security group on a port; second port on another network; rule between local groups; CNAME record. **Re-run 2026-10-26** after `management_port` was replaced by a plain port: 21 resources, full cycle 66 s, all ✅ |
 
 ### Public cloud (OVHcloud Public Cloud, region BHS5), October 2026
 
