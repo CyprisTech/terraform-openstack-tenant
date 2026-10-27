@@ -233,6 +233,13 @@ module "instance" {
         subnet_id = p.floating_ip.subnet == null ? null : local.subnet_ids["${p.floating_ip.pool}/${p.floating_ip.subnet}"]
         dns       = [for d in p.floating_ip.dns : { name = d.name, zone_id = local.zone_ids[d.zone], zone_name = local.zone_names[d.zone] }]
       }
+      extra_floating_ips = {
+        for fk, f in p.extra_floating_ips : fk => {
+          pool      = local.network_names[f.pool]
+          subnet_id = f.subnet == null ? null : local.subnet_ids["${f.pool}/${f.subnet}"]
+          dns       = [for d in f.dns : { name = d.name, zone_id = local.zone_ids[d.zone], zone_name = local.zone_names[d.zone] }]
+        }
+      }
       dns = [for d in p.dns : { name = d.name, zone_id = local.zone_ids[d.zone], zone_name = local.zone_names[d.zone] }]
     }
   }

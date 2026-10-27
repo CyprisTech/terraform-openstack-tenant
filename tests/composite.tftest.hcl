@@ -182,3 +182,108 @@ run "rejects_undeclared_subnet" {
 
   expect_failures = [var.tenant]
 }
+
+run "extra_floating_ips" {
+  command = plan
+
+  variables {
+    tenant = {
+      existing = {
+        networks = {
+          svc_public = { name = "svc-public" }
+          monitoring = { name = "monitoring", subnets = { v4 = { id = "sub-mon" } } }
+        }
+        dns_zones = { mon = { id = "zone-mon", name = "mon.example.org." } }
+      }
+      networks = {
+        app = {
+          subnets = { main = { cidr = "192.0.2.0/24" } }
+          routers = {
+            out = { external_network = "svc_public", internal_subnet = "main" }
+            mon = { external_network = "monitoring", internal_subnet = "main", advertise_routes = ["198.51.100.0/24"] }
+          }
+        }
+      }
+      instances = {
+        a = {
+          az = "nova", flavor = "m1", image = "img"
+          ports = {
+            main = {
+              network            = "app"
+              subnet             = "main"
+              floating_ip        = { pool = "svc_public" }
+              extra_floating_ips = { monitoring = { pool = "monitoring", subnet = "v4", dns = [{ name = "a", zone = "mon" }] } }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = keys(output.instances["a"].ports["main"].floating_ips) == ["monitoring"]
+    error_message = "floating_ips maps the labels of extra floating IPs to their addresses."
+  }
+
+  assert {
+    condition     = output.instances["a"].ports["main"].fqdn == "a.mon.example.org."
+    error_message = "A port whose only DNS name is on an extra floating IP exposes it as fqdn."
+  }
+}
+
+run "rejects_extra_floating_ip_on_the_primary_pool" {
+  command = plan
+
+  variables {
+    tenant = {
+      existing = { networks = { public = { name = "public" } } }
+      networks = { app = { subnets = { main = { cidr = "192.0.2.0/24" } } } }
+      instances = {
+        a = {
+          az    = "nova", flavor = "m1", image = "img"
+          ports = { main = { network = "app", subnet = "main", floating_ip = { pool = "public" }, extra_floating_ips = { again = { pool = "public" } } } }
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.tenant]
+}
+
+run "rejects_extra_floating_ip_pool_not_adopted" {
+  command = plan
+
+  variables {
+    tenant = {
+      existing = { networks = { public = { name = "public" } } }
+      networks = { app = { subnets = { main = { cidr = "192.0.2.0/24" } } } }
+      instances = {
+        a = {
+          az    = "nova", flavor = "m1", image = "img"
+          ports = { main = { network = "app", subnet = "main", floating_ip = { pool = "public" }, extra_floating_ips = { monitoring = { pool = "monitoring" } } } }
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.tenant]
+}
+
+run "rejects_unknown_zone_on_extra_floating_ip" {
+  command = plan
+
+  variables {
+    tenant = {
+      existing = { networks = { monitoring = { name = "monitoring" } } }
+      networks = { app = { subnets = { main = { cidr = "192.0.2.0/24" } } } }
+      instances = {
+        a = {
+          az    = "nova", flavor = "m1", image = "img"
+          ports = { main = { network = "app", subnet = "main", extra_floating_ips = { monitoring = { pool = "monitoring", dns = [{ name = "a", zone = "nope" }] } } } }
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.tenant]
+}

@@ -90,6 +90,12 @@ variable "tenant" {
           subnet = optional(string) # key in that network's subnets
           dns    = optional(list(object({ name = string, zone = string })), [])
         }))
+        # More floating IPs, one per other external network, keyed by a free label.
+        extra_floating_ips = optional(map(object({
+          pool   = string           # key in existing.networks
+          subnet = optional(string) # key in that network's subnets
+          dns    = optional(list(object({ name = string, zone = string })), [])
+        })), {})
         dns = optional(list(object({ name = string, zone = string })), [])
       }))
       volumes = optional(map(object({
@@ -202,9 +208,22 @@ variable "tenant" {
   validation {
     condition = alltrue(concat(
       flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : contains(keys(var.tenant.existing.networks), p.floating_ip.pool) if p.floating_ip != null]]),
+      flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : [for f in values(p.extra_floating_ips) : contains(keys(var.tenant.existing.networks), f.pool)]]]),
       [for lb in values(var.tenant.load_balancers) : contains(keys(var.tenant.existing.networks), lb.floating_ip.pool) if lb.floating_ip != null],
     ))
-    error_message = "Each floating_ip.pool must be a key of tenant.existing.networks."
+    error_message = "Each floating_ip.pool and extra_floating_ips.*.pool must be a key of tenant.existing.networks."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for i in values(var.tenant.instances) : [
+        for p in values(i.ports) : length(distinct(concat(
+          p.floating_ip == null ? [] : [p.floating_ip.pool],
+          [for f in values(p.extra_floating_ips) : f.pool],
+        ))) == length(p.extra_floating_ips) + (p.floating_ip == null ? 0 : 1)
+      ]
+    ]))
+    error_message = "Within a port, floating_ip and every extra_floating_ips entry must use different pools: one floating IP per external network."
   }
 
   validation {
@@ -218,7 +237,7 @@ variable "tenant" {
 
   validation {
     condition = alltrue(concat(
-      flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : [for d in concat(p.dns, try(p.floating_ip.dns, [])) : contains(concat(keys(var.tenant.dns.zones), keys(var.tenant.existing.dns_zones)), d.zone)]]]),
+      flatten([for i in values(var.tenant.instances) : [for p in values(i.ports) : [for d in concat(p.dns, try(p.floating_ip.dns, []), flatten([for f in values(p.extra_floating_ips) : f.dns])) : contains(concat(keys(var.tenant.dns.zones), keys(var.tenant.existing.dns_zones)), d.zone)]]]),
       flatten([for lb in values(var.tenant.load_balancers) : [for d in try(lb.floating_ip.dns, []) : contains(concat(keys(var.tenant.dns.zones), keys(var.tenant.existing.dns_zones)), d.zone)]]),
       [for r in values(var.tenant.dns.records) : contains(concat(keys(var.tenant.dns.zones), keys(var.tenant.existing.dns_zones)), r.zone)],
     ))
