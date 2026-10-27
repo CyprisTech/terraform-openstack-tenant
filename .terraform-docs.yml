@@ -20,6 +20,9 @@ settings:
   hide-empty: true
   html: true
   indent: 3
+  # Ignore .terraform.lock.hcl: a local lock file would replace the version constraint with
+  # the locked version and make the CI check fail on a clean checkout.
+  lockfile: false
   required: true
   sensitive: true
   type: true
