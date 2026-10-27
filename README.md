@@ -76,7 +76,7 @@ With credentials scoped to the project (a member role is enough):
 
 ```hcl
 module "tenant" {
-  source = "github.com/CyprisTech/terraform-openstack-tenant?ref=v0.1.1"
+  source = "github.com/CyprisTech/terraform-openstack-tenant?ref=v0.1.2"
 
   tenant = {
     # Resources are created in the project of the provider's credentials.
@@ -144,7 +144,7 @@ Every attribute of the model is documented in the [tenant model reference](docs/
 | OpenTofu | >= 1.9 | 1.9.0 and latest |
 | Terraform | >= 1.9 | 1.9.0 and latest |
 | Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` | pinned minimum and latest; 3.4.0 on a real cloud |
-| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1: the 4 integration stages and the `three-tier-ha` example (see [docs/testing.md](docs/testing.md)); public OpenStack cloud next; DevStack for `cloud-baseline` |
+| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1: the 5 integration stages and the `three-tier-ha` example (see [docs/testing.md](docs/testing.md)); public OpenStack cloud next; DevStack for `cloud-baseline` |
 
 ## Operating the module
 
@@ -168,6 +168,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | — | Examples and hand-written tenant model reference, as the interface specification | done |
 | **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer` ✅, `dns` ✅; `modules/cloudinit` ✅; tenant composite ✅ with server groups; output contract ✅; `three-tier-ha` reference example; mocked tests on OpenTofu and Terraform; integration tests on a private OpenStack cloud | released |
 | v0.1.1 | Minimum versions corrected to OpenTofu and Terraform 1.9; validation fix; mocked tests on the lowest supported versions | released |
+| v0.1.2 | Extra floating IPs on a port (one per external network); port `id` in the `instances` output | released |
 | v0.1.x | Integration results on a public OpenStack cloud; fixes they reveal | next |
 | **v0.2.0** | `modules/cloud-baseline` (admin level), tested on DevStack | planned |
 
