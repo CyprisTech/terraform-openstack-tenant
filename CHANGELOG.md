@@ -6,10 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-27
+
+Adds floating IPs from several external networks on one port, used to expose instances on several network planes (for example public services and monitoring). Backward compatible: no change for existing configurations or states.
+
 ### Added
 
 - Extra floating IPs on a port, one per external network: `extra_floating_ips`, keyed by a free label, with the same attributes as `floating_ip` (composite and `modules/instance`). `floating_ip` and its resources, state addresses and DNS record keys are unchanged; extra floating IPs use new resources keyed `<port>/<label>`. Port outputs gain `floating_ips` (label => address).
 - `instances` output: the port `id`.
+- Integration stage `05-extra-floating-ips`, passed on the private cloud with OpenTofu and Terraform.
 
 ## [0.1.1] - 2026-10-26
 
@@ -60,6 +65,7 @@ First release: the tenant layers (building blocks, composite, output contract), 
 - `management_port` and `instances.*.management_port` / `management_egress`: a site convention rather than a general feature. A second port is declared in `ports`; see `examples/adopt-existing` for adding the same port to every instance.
 - The pre-redesign code; it remains available in the history.
 
-[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/CyprisTech/terraform-openstack-tenant/releases/tag/v0.1.0
