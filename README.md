@@ -33,7 +33,7 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 | **Identity** | Users with generated, provided or no password; groups; application credentials |
 | **Networking** | Tenant networks and subnets, allocation pools, host routes, several routers per network with fixed IPs and advertised routes, provider and shared networks (admin) |
 | **Security groups** | Rules keyed by name, a shared catalog with explicit RBAC targets |
-| **Compute** | Instances from image or volume, named ports on any number of networks, server groups (anti-affinity), data volumes, labels and metadata |
+| **Compute** | Instances from image or volume, named ports on any number of networks, floating IPs from several external networks on one port, server groups (anti-affinity), data volumes, labels and metadata |
 | **Adoption** | Existing networks, subnets, security groups, DNS zones, boot and data volumes |
 | **Load balancing** | Octavia load balancers, listeners, pools, members, health monitors, Octavia flavors (topology), floating IP |
 | **DNS** | Designate zones owned by a tenant or shared with several, records on ports and floating IPs, free-form records |

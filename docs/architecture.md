@@ -93,7 +93,7 @@ module.tenant.instances = {
     id     = "..."
     az     = "nova"
     labels = ["edge"]
-    ports  = { main = { ip = "192.168.10.5", floating_ip = null, fqdn = null } }
+    ports  = { main = { id = "...", ip = "192.168.10.5", floating_ip = null, floating_ips = {}, fqdn = null } }
   }
 }
 ```
@@ -122,7 +122,7 @@ Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
 | One model per tenant, references by key | [`variables.tf`](../variables.tf) (type and validation rules), [`main.tf`](../main.tf) (`local.network_ids`, `subnet_ids`, `security_group_ids`, `zone_ids`, `zone_names`) |
 | Adoption by injection (ID) or lookup (name) | `main.tf`: `data "openstack_networking_*" "existing"`, `local.existing_*_ids` |
 | No dependency of a module on its own outputs | `main.tf`: adopted-only tables (`local.existing_*`) passed to `module.network` and `module.security_group`; `openstack_networking_secgroup_rule_v2.cross_group` for rules between local groups |
-| Stable keys (one plan, no `-target`) | every `for_each` in `modules/*/main.tf` and `main.tf`; DNS keys `<port>/<fixed\|floating>/<name>@<zone_name>`, LB members `<listener>/<member>`, host routes `<subnet>/<destination>` |
+| Stable keys (one plan, no `-target`) | every `for_each` in `modules/*/main.tf` and `main.tf`; DNS keys `<port>/<fixed\|floating>/<name>@<zone_name>` and `<port>/extra-floating/<label>/<name>@<zone_name>`, extra floating IPs `<port>/<label>`, LB members `<listener>/<member>`, host routes `<subnet>/<destination>` |
 | Several routers per subnet, default gateway | `modules/network/main.tf`: dedicated router ports, `local.gateway_router` |
 | Server groups (anti-affinity) | `main.tf`: `openstack_compute_servergroup_v2.this`, passed to `modules/instance` as `server_group_id` |
 | Fixed lifecycle rules | `modules/instance/main.tf`: `ignore_changes = [user_data, image_id, image_name, block_device]`, no `prevent_destroy` |

@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Extra floating IPs on a port, one per external network: `extra_floating_ips`, keyed by a free label, with the same attributes as `floating_ip` (composite and `modules/instance`). `floating_ip` and its resources, state addresses and DNS record keys are unchanged; extra floating IPs use new resources keyed `<port>/<label>`. Port outputs gain `floating_ips` (label => address).
+- `instances` output: the port `id`.
+
 ## [0.1.1] - 2026-10-26
 
 First published release. Fixes the minimum versions declared by `v0.1.0`.

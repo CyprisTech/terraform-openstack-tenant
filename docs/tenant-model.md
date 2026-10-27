@@ -152,7 +152,13 @@ Map key: instance name.
 | `floating_ip.pool` | string | — | Key in `existing.networks` of the external network providing the floating IP |
 | `floating_ip.subnet` | string | any | Key of a subnet of that network |
 | `floating_ip.dns` | list({name, zone}) | `[]` | A records on the floating IP; `zone` is a key in `dns.zones` or `existing.dns_zones` |
+| `extra_floating_ips.<label>` | object | `{}` | More floating IPs on the same port, keyed by a free label (for example `monitoring`); same attributes as `floating_ip`: `pool`, `subnet`, `dns` |
 | `dns` | list({name, zone}) | `[]` | A records on the fixed IP |
+
+**Several floating IPs on one port.** `floating_ip` stays the primary floating IP; `extra_floating_ips` adds one floating IP per *other* external network. The pools of `floating_ip` and of every `extra_floating_ips` entry of a port must all differ, and each pool must be a key of `existing.networks`. Neutron accepts several floating IPs on one fixed address only when each external network is reached through its own router on the port's subnet (see [`routers`](#networks)).
+
+> [!IMPORTANT]
+> Replies leave through the **instance routes**, not through the router that received the request. An extra floating IP only serves clients whose addresses are routed back through its external network's router: advertise those ranges with `advertise_routes` on that router (for example the monitoring plane range). Replies to other clients leave through the default gateway, with the wrong source address, and never reach them.
 
 **`volumes.<key>`** — data volumes attached to the instance.
 
@@ -218,7 +224,7 @@ The composite exposes outputs keyed like the input, with a fixed shape (absent v
 
 | Output | Content |
 |---|---|
-| `instances` | `<name> => { id, az, labels, ports = { <port> => { ip, floating_ip, fqdn } } }` |
+| `instances` | `<name> => { id, az, labels, ports = { <port> => { id, ip, floating_ip, floating_ips, fqdn } } }`; `floating_ips` maps each `extra_floating_ips` label to its address (`{}` when none) |
 | `server_groups` | `<name> => { id, policy }` |
 | `networks` | `<name> => { id, subnets = { <subnet> => { id, cidr } }, routers = { <router> => { id, internal_ip } } }` |
 | `security_groups` | `<name> => { id }` |
@@ -233,7 +239,7 @@ The building blocks take **IDs** instead of keys: wiring them together is the ca
 |---|---|---|
 | [`modules/network`](../modules/network) ✅ | `name`, `project_id`, `mtu`, `subnets` (as above), `routers` with `external_network_id`, `external_subnet_id`, `external_ip`, `internal_subnet`, `internal_ip`, `advertise_routes` | `id`, `name`, `subnets`, `routers` |
 | [`modules/security-group`](../modules/security-group) ✅ | `name`, `description`, `project_id`, `delete_default_rules`, `rules` with `remote_group_id` (an ID, or `"self"`) instead of `remote_group` | `id`, `name`, `rule_ids` |
-| [`modules/instance`](../modules/instance) ✅ | `name`, `project_id`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `fixed_ip`, `security_group_ids`, `port_security_enabled`, `allowed_address_pairs`, `floating_ip` (`pool`, `subnet_id`, `dns`) and `dns` (entries `{ name, zone_id, zone_name, ttl }`); `volumes`; `user_data`; `key_pair`; `server_group_id`; `labels`; `metadata`; `default_ttl` | `id`, `name`, `az`, `labels`, `ports`, `volumes` |
+| [`modules/instance`](../modules/instance) ✅ | `name`, `project_id`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `fixed_ip`, `security_group_ids`, `port_security_enabled`, `allowed_address_pairs`, `floating_ip` (`pool`, `subnet_id`, `dns`), `extra_floating_ips` (map of the same shape) and `dns` (entries `{ name, zone_id, zone_name, ttl }`); `volumes`; `user_data`; `key_pair`; `server_group_id`; `labels`; `metadata`; `default_ttl` | `id`, `name`, `az`, `labels`, `ports`, `volumes` |
 | [`modules/loadbalancer`](../modules/loadbalancer) ✅ | `name`, `project_id`, `vip` (`subnet_id`, `address`), `flavor_id`, `availability_zone`, `security_group_ids`, `floating_ip` (`pool`, `subnet_id`, `dns`), `listeners` with `pool.members` keyed by name as `{ address, subnet_id, port, weight, backup }`; `default_ttl` | `id`, `vip`, `floating_ip`, `fqdns`, `listeners` |
 | [`modules/dns`](../modules/dns) ✅ | `project_id` (admin: create zones *for* a project), `zones`, `records` with `zone` (local key) or `zone_id` + `zone_name`; `default_ttl` | `zones`, `records` |
 | [`modules/cloudinit`](../modules/cloudinit) ✅ | `hostname`, `fqdn`, `timezone`, `users`, `packages`, `package_update`, `package_upgrade`, `disks`, `bind_mounts`, `write_files`, `runcmd`, `extra_config` | `rendered`, `config` |
