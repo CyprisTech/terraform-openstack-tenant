@@ -3,13 +3,13 @@
 # upper layers do not need to know which cloud they run on.
 
 output "instances" {
-  description = "Instances keyed like the input: { id, az, labels, ports = { <port> = { ip, floating_ip, floating_ips, fqdn } } }. floating_ips maps each extra_floating_ips label to its address."
+  description = "Instances keyed like the input: { id, az, labels, ports = { <port> = { id, ip, floating_ip, floating_ips, fqdn } } }. floating_ips maps each extra_floating_ips label to its address."
   value = {
     for k, m in module.instance : k => {
       id     = m.id
       az     = m.az
       labels = m.labels
-      ports  = { for pk, p in m.ports : pk => { ip = p.ip, floating_ip = p.floating_ip, floating_ips = p.floating_ips, fqdn = p.fqdn } }
+      ports  = { for pk, p in m.ports : pk => { id = p.id, ip = p.ip, floating_ip = p.floating_ip, floating_ips = p.floating_ips, fqdn = p.fqdn } }
     }
   }
 }

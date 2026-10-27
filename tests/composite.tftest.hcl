@@ -118,6 +118,11 @@ run "single_plan_on_a_complete_tenant" {
   }
 
   assert {
+    condition     = toset(keys(output.instances["web-1"].ports["main"])) == toset(["id", "ip", "floating_ip", "floating_ips", "fqdn"])
+    error_message = "Ports expose id, ip, floating_ip, floating_ips and fqdn."
+  }
+
+  assert {
     condition     = toset(keys(output.networks)) == toset(["app"]) && toset(keys(output.security_groups)) == toset(["lb", "web"]) && toset(keys(output.dns_zones)) == toset(["app"])
     error_message = "Only created objects appear in networks, security_groups and dns_zones."
   }
