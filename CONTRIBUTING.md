@@ -61,7 +61,7 @@ These rules come from [ADR-0001](docs/adr/0001-module-design.md):
 - One logical change per commit.
 - Subject in the imperative mood, at most 72 characters (`Add router host routes`, not `added routes`).
 - A body that explains **why** the change is needed when it is not obvious.
-- Disclose AI assistance with a `Co-Authored-By:` trailer.
+- Disclose AI assistance with an `Assisted-by:` trailer (for example `Assisted-by: Claude`). Do not use `Co-Authored-By:` for AI tools: GitHub credits it as a co-author.
 - Never commit state, plan or `*.tfvars` files.
 
 ## Pull requests
