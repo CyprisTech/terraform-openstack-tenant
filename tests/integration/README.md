@@ -42,6 +42,7 @@ export OS_CLOUD=my-test-cloud          # default: tf-module-test
 | `02-instance` | + 1 instance booting from a new root volume, 1 data volume, cloud-init, 1 floating IP, 2 DNS records in the owned zone | empty plan after apply; data disk formatted and mounted (console log `disk-data:`); records created |
 | `03-loadbalancer` | + 2 instances, Octavia load balancer (TCP 22, TCP monitor), floating IP on the VIP, DNS record in the **shared** zone, security group rule between local groups | empty plan after apply; members `ONLINE`; record in a shared zone |
 | `04-complete` | 2 networks, 2 routers on one subnet with an advertised route, adopted shared security group, management port, CNAME record | empty plan after apply; host route on the subnet; management port present |
+| `05-extra-floating-ips` | 1 network, 2 routers to two external networks, 1 instance whose port has a primary floating IP and an extra floating IP on the second network, an A record on each | empty plan after apply; both floating IPs `ACTIVE` on the same fixed IP; outputs `floating_ip`, `floating_ips` and the port `id` |
 
 Stages are independent: each one creates and destroys its own resources, under names starting with `it0N-`, so that leftovers are easy to identify.
 
