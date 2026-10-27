@@ -81,6 +81,9 @@ variable "ports" {
     - port_security_enabled: set to false for routing or appliance instances (no security groups then).
     - allowed_address_pairs: additional addresses the port may use (virtual IPs, keepalived...).
     - floating_ip: { pool (external network name), subnet_id, dns } to give the port a floating IP.
+    - extra_floating_ips: more floating IPs on the same port, keyed by a free label, same shape as
+      floating_ip. One floating IP per external network: all pools of a port must differ, and each
+      external network must be reached through its own router.
     - dns: A records on the fixed address.
     DNS entries are { name, zone_id, zone_name, ttl }; name "" is the zone apex. zone_name (with its
     trailing dot) builds the record name and its key, so it must be known at plan time.
@@ -102,6 +105,16 @@ variable "ports" {
         ttl       = optional(number)
       })), [])
     }))
+    extra_floating_ips = optional(map(object({
+      pool      = string
+      subnet_id = optional(string)
+      dns = optional(list(object({
+        name      = string
+        zone_id   = string
+        zone_name = string
+        ttl       = optional(number)
+      })), [])
+    })), {})
     dns = optional(list(object({
       name      = string
       zone_id   = string
@@ -123,10 +136,20 @@ variable "ports" {
   validation {
     condition = alltrue(flatten([
       for p in values(var.ports) : [
-        for d in concat(p.dns, try(p.floating_ip.dns, [])) : endswith(d.zone_name, ".")
+        for d in concat(p.dns, try(p.floating_ip.dns, []), flatten([for f in values(p.extra_floating_ips) : f.dns])) : endswith(d.zone_name, ".")
       ]
     ]))
     error_message = "DNS zone_name values must end with a dot."
+  }
+
+  validation {
+    condition = alltrue([
+      for p in values(var.ports) : length(distinct(concat(
+        p.floating_ip == null ? [] : [p.floating_ip.pool],
+        [for f in values(p.extra_floating_ips) : f.pool],
+      ))) == length(p.extra_floating_ips) + (p.floating_ip == null ? 0 : 1)
+    ])
+    error_message = "The pools of floating_ip and extra_floating_ips of a port must all differ: one floating IP per external network."
   }
 }
 

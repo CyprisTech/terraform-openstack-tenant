@@ -206,3 +206,140 @@ run "rejects_zone_name_without_dot" {
 
   expect_failures = [var.ports]
 }
+
+run "extra_floating_ips" {
+  command = plan
+
+  module {
+    source = "./modules/instance"
+  }
+
+  variables {
+    ports = {
+      main = {
+        network_id  = "net-app"
+        subnet_id   = "sub-app"
+        floating_ip = { pool = "public", dns = [{ name = "www", zone_id = "zone-1", zone_name = "example.org." }] }
+        extra_floating_ips = {
+          monitoring = { pool = "monitoring", subnet_id = "sub-mon", dns = [{ name = "web-1", zone_id = "zone-3", zone_name = "mon.example.org." }] }
+        }
+        dns = [{ name = "web-1", zone_id = "zone-2", zone_name = "internal.example.org." }]
+      }
+      mgmt = { network_id = "net-mgmt", subnet_id = "sub-mgmt" }
+    }
+  }
+
+  assert {
+    condition     = length(openstack_networking_floatingip_v2.this) + length(openstack_networking_floatingip_v2.extra) == 2 && length(openstack_networking_floatingip_associate_v2.this) + length(openstack_networking_floatingip_associate_v2.extra) == 2
+    error_message = "A port with floating_ip and one extra floating IP gets two floating IPs and two associations."
+  }
+
+  assert {
+    condition     = openstack_networking_floatingip_v2.extra["main/monitoring"].pool == "monitoring" && openstack_networking_floatingip_v2.extra["main/monitoring"].subnet_id == "sub-mon" && openstack_networking_floatingip_v2.extra["main/monitoring"].description == "web-1-main-monitoring"
+    error_message = "Extra floating IPs are keyed \"<port>/<label>\" and use their own pool and subnet."
+  }
+
+  assert {
+    condition     = keys(output.ports["main"].floating_ips) == ["monitoring"] && length(output.ports["mgmt"].floating_ips) == 0
+    error_message = "floating_ips maps the labels of extra floating IPs to their addresses, and is empty without them."
+  }
+
+  assert {
+    condition     = output.ports["main"].fqdn == "www.example.org."
+    error_message = "fqdn is still the name on the primary floating IP."
+  }
+}
+
+run "extra_floating_ips_keep_existing_addresses" {
+  command = plan
+
+  module {
+    source = "./modules/instance"
+  }
+
+  variables {
+    ports = {
+      main = {
+        network_id         = "net-app"
+        subnet_id          = "sub-app"
+        security_group_ids = ["sg-web"]
+        floating_ip = {
+          pool = "public"
+          dns  = [{ name = "www", zone_id = "zone-1", zone_name = "example.org." }, { name = "", zone_id = "zone-1", zone_name = "example.org." }]
+        }
+        extra_floating_ips = {
+          monitoring = { pool = "monitoring", dns = [{ name = "web-1", zone_id = "zone-3", zone_name = "mon.example.org." }] }
+        }
+        dns = [{ name = "web-1", zone_id = "zone-2", zone_name = "internal.example.org." }]
+      }
+      mgmt = {
+        network_id         = "net-mgmt"
+        subnet_id          = "sub-mgmt"
+        security_group_ids = ["sg-ssh"]
+      }
+    }
+  }
+
+  # Same keys as in keys_follow_the_input: adding an extra floating IP moves
+  # nothing in the state.
+  assert {
+    condition     = toset(keys(openstack_networking_floatingip_v2.this)) == toset(["main"]) && toset(keys(openstack_networking_floatingip_associate_v2.this)) == toset(["main"])
+    error_message = "The primary floating IP keeps its \"<port>\" key."
+  }
+
+  assert {
+    condition     = toset(keys(openstack_networking_floatingip_v2.extra)) == toset(["main/monitoring"]) && toset(keys(openstack_networking_floatingip_associate_v2.extra)) == toset(["main/monitoring"])
+    error_message = "Extra floating IPs live in their own resources, keyed \"<port>/<label>\"."
+  }
+
+  assert {
+    condition = toset(keys(openstack_dns_recordset_v2.this)) == toset([
+      "main/floating/www@example.org.",
+      "main/floating/@example.org.",
+      "main/fixed/web-1@internal.example.org.",
+      "main/extra-floating/monitoring/web-1@mon.example.org.",
+    ])
+    error_message = "Existing DNS record keys are unchanged; records on extra floating IPs get their own kind."
+  }
+}
+
+run "rejects_extra_floating_ip_on_the_primary_pool" {
+  command = plan
+
+  module {
+    source = "./modules/instance"
+  }
+
+  variables {
+    ports = {
+      main = {
+        network_id         = "n"
+        subnet_id          = "s"
+        floating_ip        = { pool = "public" }
+        extra_floating_ips = { again = { pool = "public" } }
+      }
+    }
+  }
+
+  expect_failures = [var.ports]
+}
+
+run "rejects_extra_floating_ips_on_the_same_pool" {
+  command = plan
+
+  module {
+    source = "./modules/instance"
+  }
+
+  variables {
+    ports = {
+      main = {
+        network_id         = "n"
+        subnet_id          = "s"
+        extra_floating_ips = { a = { pool = "monitoring" }, b = { pool = "monitoring" } }
+      }
+    }
+  }
+
+  expect_failures = [var.ports]
+}

@@ -11,22 +11,39 @@ locals {
   # Ports are attached in key order: the first key is the primary interface.
   port_keys = sort(keys(var.ports))
 
+  # Extra floating IPs keyed "<port>/<label>"; resources of the primary
+  # floating IP keep their "<port>" keys.
+  extra_floating_ips = merge([
+    for pk, p in var.ports : {
+      for lk, f in p.extra_floating_ips : "${pk}/${lk}" => merge(f, { port = pk, label = lk })
+    }
+  ]...)
+
   # DNS records keyed by port, kind (fixed or floating), name and zone name:
   # all known at plan time, even when zone IDs come from another module.
   dns_records = merge(
     {
       for item in flatten([
         for pk, p in var.ports : [
-          for d in p.dns : merge(d, { port = pk, floating = false })
+          for d in p.dns : merge(d, { port = pk, floating = false, extra = null, label = null })
         ]
       ]) : "${item.port}/fixed/${item.name}@${item.zone_name}" => item
     },
     {
       for item in flatten([
         for pk, p in var.ports : [
-          for d in try(p.floating_ip.dns, []) : merge(d, { port = pk, floating = true })
+          for d in try(p.floating_ip.dns, []) : merge(d, { port = pk, floating = true, extra = null, label = null })
         ]
       ]) : "${item.port}/floating/${item.name}@${item.zone_name}" => item
+    },
+    # Records on extra floating IPs get their own kind, so the keys of the
+    # records above never change when extra floating IPs are added.
+    {
+      for item in flatten([
+        for fk, f in local.extra_floating_ips : [
+          for d in f.dns : merge(d, { port = f.port, floating = false, extra = fk, label = f.label })
+        ]
+      ]) : "${item.port}/extra-floating/${item.label}/${item.name}@${item.zone_name}" => item
     },
   )
 
@@ -190,6 +207,25 @@ resource "openstack_networking_floatingip_associate_v2" "this" {
   depends_on = [openstack_compute_instance_v2.this]
 }
 
+resource "openstack_networking_floatingip_v2" "extra" {
+  for_each = local.extra_floating_ips
+
+  pool        = each.value.pool
+  subnet_id   = each.value.subnet_id
+  tenant_id   = var.project_id
+  description = "${var.name}-${each.value.port}-${each.value.label}"
+}
+
+resource "openstack_networking_floatingip_associate_v2" "extra" {
+  for_each = local.extra_floating_ips
+
+  floating_ip = openstack_networking_floatingip_v2.extra[each.key].address
+  port_id     = openstack_networking_port_v2.this[each.value.port].id
+
+  # The port must be bound to the instance before the association.
+  depends_on = [openstack_compute_instance_v2.this]
+}
+
 resource "openstack_dns_recordset_v2" "this" {
   for_each = local.dns_records
 
@@ -198,8 +234,8 @@ resource "openstack_dns_recordset_v2" "this" {
   type    = "A"
   ttl     = coalesce(each.value.ttl, var.default_ttl)
   records = [
-    each.value.floating
-    ? openstack_networking_floatingip_v2.this[each.value.port].address
-    : openstack_networking_port_v2.this[each.value.port].all_fixed_ips[0]
+    each.value.extra != null ? openstack_networking_floatingip_v2.extra[each.value.extra].address :
+    each.value.floating ? openstack_networking_floatingip_v2.this[each.value.port].address :
+    openstack_networking_port_v2.this[each.value.port].all_fixed_ips[0]
   ]
 }
