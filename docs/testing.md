@@ -23,6 +23,15 @@ Mocked tests cannot see how a real cloud and the provider behave (attributes rea
 | `03-loadbalancer` | ✅ | ✅ | ✅ | 551 s (amphora build ~2 min) | Load balancer and both members `ONLINE`, TCP monitor `ONLINE`; record written in a zone shared with the project; rule between local security groups. **Re-run 2026-10-26** after the `v0.1` changes (soft anti-affinity server group on the web members): 25 resources, full cycle 654 s, all ✅ |
 | `04-complete` | ✅ | ✅ | ✅ | 46 s | Two routers on one subnet: the first holds the gateway address, the second gets an allocated address and its advertised route reaches the instance through DHCP; adopted shared security group on a port; second port on another network; rule between local groups; CNAME record. **Re-run 2026-10-26** after `management_port` was replaced by a plain port: 21 resources, full cycle 66 s, all ✅ |
 
+#### Stage `05-extra-floating-ips` (2026-10-27, before `v0.1.2`)
+
+17 resources, apply in 55 s, **empty plan after apply with OpenTofu 1.13.2 and Terraform 1.17.0**, 17 destroyed in 14 s, no leftover.
+
+- The port carries its primary floating IP (external network) and the extra one (second external network, reached through the second router); both are `ACTIVE` on the same fixed IP.
+- One A record per floating IP in the owned zone.
+- Outputs: `floating_ip`, `floating_ips = { transit = ... }` and the port `id`.
+- A data-path test of the same layout (two floating IPs on one port, each through its own router) passed on the same cloud: TCP through both floating IPs from a routed client, 6/6. Replies leave through the routes of the instance, so each floating IP serves the clients whose addresses are routed back through its router (see [tenant model](tenant-model.md)).
+
 #### Example `three-tier-ha` (2026-10-26)
 
 Applied from `examples/three-tier-ha` on the same cloud: 51 resources in 130 s, **empty plan after apply**, 51 destroyed in 90 s.
