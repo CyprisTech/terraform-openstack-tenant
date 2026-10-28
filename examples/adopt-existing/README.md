@@ -8,3 +8,18 @@ A tenant that relies on objects owned by others:
 - an instance that boots from an existing root volume and attaches an existing data volume created and protected outside the module.
 
 Runs with a member role on the project.
+
+## Run
+
+The objects to adopt must exist before the first plan: those given by name are looked up at plan time, those given by ID are used as they are.
+
+```bash
+export OS_CLOUD=mycloud
+tofu init
+tofu apply \
+  -var transit_network_id=<id> -var transit_subnet_id=<id> \
+  -var monitoring_security_group_id=<id> \
+  -var shared_services_zone_id=<id> -var db_data_volume_id=<id>
+```
+
+A zone is usable only if the project owns it or if it is shared with the project; transferring a zone hides it from the stack that created it ([tenant model](../../docs/tenant-model.md#existing)). The adopted volume is never deleted by `destroy`: it belongs to the stack that created it.

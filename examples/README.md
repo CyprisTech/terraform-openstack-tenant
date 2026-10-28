@@ -11,7 +11,7 @@ Each example is a complete root configuration. Credentials come from `clouds.yam
 | [`lab-single-stack`](lab-single-stack) | A complete tenant in one stack, with cloud-init, volumes and floating IPs | Project member | + Cinder |
 | [`adopt-existing`](adopt-existing) | Adoption by ID and by name of networks, security groups, DNS zones and volumes; an extra management port; boot from an existing volume | Project member | + Cinder, Designate |
 | [`layered-network-compute`](layered-network-compute) | Long-lived network layer and short-lived compute layer in separate states | Project member | Nova, Neutron |
-| [`public-edge`](public-edge) | Octavia in front of two reverse proxies, PROXY protocol, DNS on the floating IP | Project member | + Octavia, Designate |
+| [`public-edge`](public-edge) | Octavia in front of two reverse proxies on two hosts, PROXY protocol, DNS on the floating IP | Project member | + Octavia, Designate |
 | [`three-tier-ha`](three-tier-ha) | Reference architecture: isolated web/app/data tiers, bastion, load balancer, anti-affinity server groups, data volumes, decisions and trade-offs | Project member | + Cinder, Octavia, Designate (optional) |
 | [`building-blocks`](building-blocks) | The building blocks used directly, without the composite | Project member | Nova, Neutron |
 
@@ -26,4 +26,6 @@ tofu apply
 tofu destroy
 ```
 
-Adapt names (external network, flavors, images) to your cloud: they differ between providers.
+Adapt names (external network, flavors, images, availability zones) to your cloud: they differ between providers. Before the first apply on a new cloud, read [real-cloud pitfalls](../docs/pitfalls.md).
+
+A complete multi-tenant architecture built on the composite is [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference).

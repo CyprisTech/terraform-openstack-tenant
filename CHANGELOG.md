@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- ADR-0002, the output contract of the composite (fulfils ADR-0001 D11), and ADR-0003, several floating IPs on one port (the `v0.1.2` decision).
+- Documentation: real-cloud pitfalls (MTU, resolvers, source NAT, reply routing, PROXY protocol, quotas, images, DNS), project lifecycle (versions, release gates, support), diagram of references by key, documentation index in the README; fuller example READMEs and a diagram for `public-edge`.
+- CI: documentation links and anchors checked.
+
+### Changed
+
+- README: features delivered in `v0.1.x` and planned for `v0.2.0` (`cloud-baseline`) listed apart; usage from the OpenTofu and Terraform registries; what the module demonstrates, with proofs; roadmap and test status of the public cloud.
+- Example `public-edge`: the two proxies are placed on different hosts (`anti-affinity` server group).
+
 ## [0.1.2] - 2026-10-27
 
 Adds floating IPs from several external networks on one port, used to expose instances on several network planes (for example public services and monitoring). Backward compatible: no change for existing configurations or states.

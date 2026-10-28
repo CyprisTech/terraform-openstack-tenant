@@ -46,7 +46,7 @@ Applied from `examples/three-tier-ha` on the same cloud: 51 resources in 130 s, 
 
 ### Public cloud (OVHcloud Public Cloud, region BHS5), October 2026
 
-**Status:** blocked by the project quotas, not by the module. A new project has Neutron quotas `security_group = 0` and `security_group_rule = 0` (only the `default` group exists), so the first security group fails with `409 OverQuota`. The Control panel only offers compute quota tiers through a prepaid credit; a support request for the two network quotas is in progress.
+**Status (2026-10-28):** blocked by the project quotas, not by the module; the support request opened on 2026-10-25 has had no answer yet. A new project has Neutron quotas `security_group = 0` and `security_group_rule = 0` (only the `default` group exists), so the first security group fails with `409 OverQuota`. The Control panel only offers compute quota tiers through a prepaid credit; a support request for the two network quotas is in progress.
 
 Read-only checks and plans already pass on this cloud: authentication with an application credential, external network `Ext-Net`, Octavia (flavors `small` to `xl`), no Designate (DNS records are skipped), single external network (both routers of stage 04 use it). Plans: 7, 14, 23 and 20 resources for stages 01 to 04.
 
@@ -58,6 +58,9 @@ Read-only checks and plans already pass on this cloud: authentication with an ap
 | 2 | Root volume created by Nova (`block_device` from image) | Nova did not pass its availability zone to Cinder, which fell back to its default zone: `NoValidBackend`, instance in `ERROR`. The data volume of the same run, created with an explicit zone, succeeded | The module creates the root volume itself, in zone `boot.az` (defaults to the instance zone), and boots from it |
 
 ### Environment observations
+
+The observations below, and those of [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference/blob/main/docs/testing.md), are collected as guidance in [real-cloud pitfalls](pitfalls.md).
+
 
 - Test subnets need DNS resolvers (`dns_nameservers`); without them cloud-init waits for package index timeouts for several minutes (first boot: 420 s without resolvers, 20 s with).
 - An image with `shared` visibility and no members is invisible to a project with the `member` role; administrators do not notice it because the `admin` role sees every image.

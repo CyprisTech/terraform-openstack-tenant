@@ -1,4 +1,4 @@
-# Provider-neutral output contract (draft, see docs/tenant-model.md): fixed
+# Provider-neutral output contract (docs/adr/0002-output-contract.md): fixed
 # shapes keyed like the input, with no OpenStack-specific notion, so that
 # upper layers do not need to know which cloud they run on.
 

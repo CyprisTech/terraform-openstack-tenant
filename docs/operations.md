@@ -1,6 +1,6 @@
 # Operating the module
 
-The modules deliberately contain **no operational choices**: no backend, no provider configuration, no secret store, no pipeline. This page lists what an operator has to decide and the options commonly used. None of them is required by the modules.
+The modules deliberately contain **no operational choices**: no backend, no provider configuration, no secret store, no pipeline. This page lists what an operator has to decide and the options commonly used. None of them is required by the modules. Problems that come from the cloud itself are in [real-cloud pitfalls](pitfalls.md).
 
 ## Decision checklist
 
@@ -79,3 +79,7 @@ tofu plan -detailed-exitcode
 ```
 
 Step 1 matters: without it, `-refresh=false` compares the configuration with a state that was never read back, and the plan shows in-place changes on instances (for example `scheduler_hints`) that do not exist on the cloud.
+
+## Recovering a DNS record created after a timeout
+
+When Designate is slow, `apply` can time out on a record that Designate creates later; the next `apply` then fails with `Duplicate RecordSet`. Import the record instead of deleting it: see [real-cloud pitfalls](pitfalls.md#dns).

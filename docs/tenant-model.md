@@ -55,7 +55,7 @@ Map key: network name (unless `name` is set).
 | Attribute | Type | Default | Description |
 |---|---|---|---|
 | `name` | string | key | OpenStack name |
-| `mtu` | number | cloud default | MTU of the network |
+| `mtu` | number | cloud default | MTU of the network. Set it to the smallest MTU on the path when the network's traffic crosses other networks or tunnels ([pitfalls](pitfalls.md#mtu)) |
 | `admin_state_up` | bool | `true` | |
 | `availability_zone_hints` | list(string) | `[]` | |
 | `subnets` | map | required | See below |
@@ -69,7 +69,7 @@ Map key: network name (unless `name` is set).
 | `ip_version` | number | `4` | |
 | `gateway_ip` | string | first address | |
 | `enable_dhcp` | bool | `true` | |
-| `dns_nameservers` | list(string) | `[]` | |
+| `dns_nameservers` | list(string) | `[]` | Resolvers pushed by DHCP; they must be reachable through the routes of the subnet at first boot ([pitfalls](pitfalls.md#resolvers-at-first-boot)) |
 | `allocation_pools` | list({start, end}) | whole range | Addresses DHCP may allocate |
 | `host_routes` | list({destination, nexthop}) | `[]` | Static routes pushed by DHCP |
 
