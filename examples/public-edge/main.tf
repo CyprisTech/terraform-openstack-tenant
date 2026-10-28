@@ -27,13 +27,17 @@ module "tenant" {
       }
     }
 
+    # The two proxies on different hosts: losing a host must not take the edge down.
+    server_groups = { proxies = { policy = "anti-affinity" } }
+
     instances = {
       for name in ["proxy-1", "proxy-2"] : name => {
-        az     = "nova"
-        flavor = "m1.small"
-        image  = "ubuntu-24.04"
-        labels = ["reverse-proxy"]
-        ports  = { main = { network = "edge", subnet = "main", security_groups = ["proxy"] } }
+        server_group = "proxies"
+        az           = "nova"
+        flavor       = "m1.small"
+        image        = "ubuntu-24.04"
+        labels       = ["reverse-proxy"]
+        ports        = { main = { network = "edge", subnet = "main", security_groups = ["proxy"] } }
       }
     }
 
