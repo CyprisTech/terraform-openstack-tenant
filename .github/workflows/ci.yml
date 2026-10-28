@@ -127,7 +127,7 @@ jobs:
           rm terraform-docs
           git diff --exit-code -- README.md modules/
 
-  docs:
+  links:
     name: documentation links
     runs-on: ubuntu-latest
     steps:
