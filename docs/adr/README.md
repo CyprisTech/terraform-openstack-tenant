@@ -4,7 +4,9 @@ An architecture decision record (ADR) captures one significant design decision: 
 
 | ADR | Title | Status |
 |---|---|---|
-| [0001](0001-module-design.md) | Module design | Proposed |
+| [0001](0001-module-design.md) | Module design | Accepted (`v0.1.0`) |
+| [0002](0002-output-contract.md) | Output contract of the tenant composite | Accepted (`v0.1.0`, recorded later) |
+| [0003](0003-floating-ips-per-port.md) | Several floating IPs on one port | Accepted (`v0.1.2`, recorded later) |
 
 ## Writing an ADR
 

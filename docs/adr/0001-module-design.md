@@ -3,6 +3,7 @@
 - **Status:** Accepted (released in `v0.1.0`, 2026-10-26)
 - **Date:** 2026-10-21
 - **Deciders:** Gregory Gabrielian
+- **Notes:** D11 is fulfilled by [ADR-0002](0002-output-contract.md). The layout of D13 was the plan: `modules/cloud-baseline` and the `baseline-plus-tenant` example come with `v0.2.0`; the `three-tier-ha` and `minimal-no-lb-no-dns` examples were added. The test strategy (two clouds, one without Octavia or Designate) is the target; [testing](../testing.md) gives its status.
 
 An *Architecture Decision Record* (ADR) captures one design decision, its context and its consequences. This ADR was revised in place until the first release; from `v0.1.0` on, changes go through new ADRs.
 
