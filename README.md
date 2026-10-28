@@ -5,13 +5,15 @@
 [![OpenTofu >= 1.9](https://img.shields.io/badge/OpenTofu-%3E%3D1.9-ffda18?logo=opentofu)](https://opentofu.org)
 [![Terraform >= 1.9](https://img.shields.io/badge/Terraform-%3E%3D1.9-844fba?logo=terraform)](https://www.terraform.io)
 
-OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**, on any OpenStack cloud, public or private, without admin rights: networks, routers, security groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects created elsewhere (shared networks, security group catalogs, DNS zones, volumes) can be **adopted** instead of recreated.
+OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**, on any OpenStack cloud, public or private, **with a member role on the project only**: networks, routers, security groups, server groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects owned elsewhere (shared networks, security groups, DNS zones, volumes) are **adopted** instead of recreated.
 
 > [!NOTE]
-> **First releases, `v0.1.x`.** The tenant layers are tested with mocked providers on OpenTofu and Terraform, and on a real OpenStack 2025.1 cloud ([test report](docs/testing.md)). Tests on a public OpenStack cloud come next. Before `v1.0.0`, minor versions may change the interface; the [changelog](CHANGELOG.md) gives migration notes. Evaluate it on a test project before relying on it in production.
+> **`v0.1.x`: the tenant layers.** Tested with mocked providers on OpenTofu and Terraform, on a private OpenStack 2025.1 cloud, and in production-like use by [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference) ([test report](docs/testing.md)). The admin-level module `cloud-baseline` is planned for `v0.2.0`; the public cloud run is pending (see [testing](docs/testing.md#public-cloud-ovhcloud-public-cloud-region-bhs5-october-2026)). Before `v1.0.0`, minor versions may change the interface; the [changelog](CHANGELOG.md) gives migration notes.
 
 ## Table of contents
 
+- [Who it is for](#who-it-is-for)
+- [What it demonstrates](#what-it-demonstrates)
 - [Features](#features)
 - [How it works](#how-it-works)
 - [Usage](#usage)
@@ -25,58 +27,78 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 - [Security](#security)
 - [License](#license)
 
+## Who it is for
+
+- **Teams consuming an OpenStack cloud without admin rights**, notably public and sovereign European clouds: one model per project, no admin role, no assumption on the deployment tool or vendor of the cloud.
+- **Platform teams** that build several tenants on one cloud and need stable outputs to chain configuration tools, Kubernetes or inventories.
+- **Operators of private clouds**, later: `cloud-baseline` (`v0.2.0`) will cover projects, quotas, users and shared objects.
+
+## What it demonstrates
+
+| Claim | How | Proof |
+|---|---|---|
+| **One plan, no `-target`** | Every `for_each` key comes from the input, never from an ID known after apply | 43 mocked test runs on OpenTofu and Terraform; empty plan after apply on a real cloud, 5 stages and the `three-tier-ha` example ([testing](docs/testing.md)) |
+| **Member role is enough** | Resources go to the project of the credentials; nothing reads other projects | Every integration run uses a project-scoped application credential (`member`, `load-balancer_member`) |
+| **Adoption instead of recreation** | `existing` by ID (even created in the same apply) or by name | Stages 03 and 04 (shared DNS zone, shared security group); [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference) adopts shared networks and zones in every stack |
+| **Composable** | Provider-neutral output contract ([ADR-0002](docs/adr/0002-output-contract.md)) | [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference): four tenants, a public entry point and a Kubernetes cluster built on the composite, reachability matrix 43/43 |
+| **Real clouds, not only mocks** | Integration tests on a real cloud before every release | Two cloud-side defects found and fixed before `v0.1.0`, invisible to mocked tests ([testing](docs/testing.md#defects-found-by-the-integration-tests)) |
+
 ## Features
+
+**Delivered (`v0.1.x`)**, with a member role on the project:
 
 | Area | Capabilities |
 |---|---|
-| **Projects** | Quotas (compute, network, block storage), role assignments to users or groups |
-| **Identity** | Users with generated, provided or no password; groups; application credentials |
-| **Networking** | Tenant networks and subnets, allocation pools, host routes, several routers per network with fixed IPs and advertised routes, provider and shared networks (admin) |
-| **Security groups** | Rules keyed by name, a shared catalog with explicit RBAC targets |
-| **Compute** | Instances from image or volume, named ports on any number of networks, floating IPs from several external networks on one port, server groups (anti-affinity), data volumes, labels and metadata |
+| **Networking** | Networks and subnets (MTU, allocation pools, host routes, DNS resolvers), several routers per network with fixed addresses and routes advertised by DHCP |
+| **Security groups** | Rules keyed by name, references to local or adopted groups |
+| **Compute** | Instances from image, new volume or existing volume; named ports on any number of networks; server groups (anti-affinity); data volumes; labels and metadata |
+| **Floating IPs** | One per port, plus one per other external network on the same port ([ADR-0003](docs/adr/0003-floating-ips-per-port.md)) |
 | **Adoption** | Existing networks, subnets, security groups, DNS zones, boot and data volumes |
-| **Load balancing** | Octavia load balancers, listeners, pools, members, health monitors, Octavia flavors (topology), floating IP |
-| **DNS** | Designate zones owned by a tenant or shared with several, records on ports and floating IPs, free-form records |
-| **Bootstrap** | Cloud-init rendering as a separate module; data disks formatted only when empty and mounted by label at every boot |
-| **Composition** | Building blocks usable alone; a provider-neutral output contract for upper layers |
+| **Load balancing** | Octavia load balancers, listeners, pools, members, health monitors, Octavia flavors (topology), PROXY protocol, floating IP |
+| **DNS** | Designate zones and records on ports, floating IPs and load balancers, in owned or shared zones; free-form records |
+| **Bootstrap** | `modules/cloudinit`: users, packages, files; data disks formatted only when empty and mounted by label at every boot |
+| **Composition** | Building blocks usable alone; provider-neutral outputs for upper layers |
+
+**Planned (`v0.2.0`, `modules/cloud-baseline`, admin role):** projects and quotas, users, groups and role assignments, application credentials, flavors, images and aggregates, provider and shared networks, a shared security group catalog with explicit RBAC targets, DNS zones created for or shared with tenants. The input model is specified in [ADR-0001 § D4](docs/adr/0001-module-design.md#d4-cloud-baseline-input-model).
 
 ## How it works
 
-The repository has three layers. **Building blocks** handle one concern each and can be used alone; the **tenant composite** describes a whole tenant in one model and calls them; **cloud-baseline** handles what requires cloud administrator privileges:
+Three layers. The **building blocks** handle one concern each and can be used alone; the **tenant composite** describes a whole tenant in one model and calls them; **cloud-baseline** (planned) will handle what needs the admin role:
 
 ```mermaid
 flowchart LR
     subgraph admin["Cloud administrator · admin role"]
-        B["modules/cloud-baseline<br/>projects · quotas · users · roles<br/>flavors · images · aggregates<br/>provider networks · SG catalog · DNS zones"]
+        B["modules/cloud-baseline (planned v0.2)<br/>projects · quotas · users · roles<br/>flavors · images · shared networks<br/>SG catalog · DNS zones"]
     end
-    subgraph tenant["Tenant operator · project-scoped credentials"]
+    subgraph tenant["Tenant operator · member role on the project"]
         T["tenant composite (root)<br/>one model per tenant"]
         BB["building blocks<br/>network · security-group · instance<br/>loadbalancer · dns"]
         C["modules/cloudinit<br/>user_data"]
         T --> BB
     end
-    B -- "IDs injected through existing = {...}" --> T
+    X["Objects owned elsewhere<br/>(operator, console, other stacks)"]
+    B -. "IDs injected through existing" .-> T
+    X -- "adopted through existing, by ID or name" --> T
     C -- "rendered user_data" --> T
-    T -- "provider-neutral outputs" --> U["Upper layers<br/>(Kubernetes, Swarm, Ansible...)"]
+    T -- "provider-neutral outputs" --> U["Upper layers<br/>Kubernetes, configuration tools, inventories"]
+    style B stroke-dasharray: 5 5
 ```
 
-Three principles drive the design (details in [docs/architecture.md](docs/architecture.md)):
+Four rules drive the design ([architecture](docs/architecture.md)):
 
 1. **One plan, no `-target`.** Every resource is keyed by a name from the input, never by an ID computed at apply time. A new project plans in one pass, and the plan after `apply` is empty.
 2. **Adopt by injection.** Objects owned by another stack are passed to `existing` by ID (or looked up by name when they already exist), so even objects created in the same apply can be adopted.
-3. **Least privilege.** Tenant layers run with a member role on their project and never need to read other projects.
-4. **No operational opinion.** The modules contain no backend, no provider configuration and no dependency on a secret store or CI system. See [Operating the module](#operating-the-module).
+3. **Least privilege.** Tenant layers run with a member role on their project and never read other projects.
+4. **No operational opinion.** No backend, no provider configuration, no dependency on a secret store or CI system ([operations](docs/operations.md)).
 
 ## Usage
 
-> [!NOTE]
-> Pin a release with `?ref=`.
-
-With credentials scoped to the project (a member role is enough):
+The module is published in the [OpenTofu Registry](https://search.opentofu.org/module/cypristech/tenant/openstack) and the [Terraform Registry](https://registry.terraform.io/modules/CyprisTech/tenant/openstack). With credentials scoped to the project:
 
 ```hcl
 module "tenant" {
-  source = "github.com/CyprisTech/terraform-openstack-tenant?ref=v0.1.2"
+  source  = "CyprisTech/tenant/openstack"
+  version = "~> 0.1"
 
   tenant = {
     # Resources are created in the project of the provider's credentials.
@@ -84,7 +106,7 @@ module "tenant" {
 
     networks = {
       app = {
-        subnets = { main = { cidr = "192.168.10.0/24" } }
+        subnets = { main = { cidr = "192.168.10.0/24", dns_nameservers = ["192.0.2.53"] } }
         routers = { out = { external_network = "public", internal_subnet = "main" } } # default gateway of the subnet
       }
     }
@@ -109,7 +131,7 @@ output "web_ip" {
 }
 ```
 
-The provider is configured by the caller, for example with a `clouds.yaml` entry and `OS_CLOUD`:
+The provider is configured by the caller, for example with a `clouds.yaml` entry:
 
 ```hcl
 provider "openstack" {
@@ -117,9 +139,10 @@ provider "openstack" {
 }
 ```
 
-The building blocks can also be used directly, without the composite: see [`examples/building-blocks`](examples/building-blocks).
+- **Building blocks** without the composite: `source = "CyprisTech/tenant/openstack//modules/network"` (registries) and [`examples/building-blocks`](examples/building-blocks).
+- **Unreleased commits** or no registry access: `source = "git::https://github.com/CyprisTech/terraform-openstack-tenant.git?ref=<tag or commit>"`.
 
-**Cloud administrators** (planned for `v0.2.0`): `modules/cloud-baseline` will create projects, quotas, users, role assignments, flavors, images, provider networks, a shared security group catalog and DNS zones owned by or shared with tenants. Its input model is described in [ADR-0001 § D4](docs/adr/0001-module-design.md#d4-cloud-baseline-input-model).
+Before the first apply on a new cloud, read [real-cloud pitfalls](docs/pitfalls.md): MTU, resolvers, source addresses and quotas cause most first-run failures.
 
 ## Examples
 
@@ -132,45 +155,43 @@ The [examples](examples/README.md) are complete root configurations, validated i
 | [`adopt-existing`](examples/adopt-existing) | Adoption by ID and by name of networks, security groups, DNS zones and volumes |
 | [`layered-network-compute`](examples/layered-network-compute) | Network and compute layers in separate states, connected through `existing` |
 | [`public-edge`](examples/public-edge) | Octavia in front of reverse proxies, PROXY protocol, DNS on the floating IP |
-| [`three-tier-ha`](examples/three-tier-ha) | Reference architecture: isolated tiers, bastion, load balancer, anti-affinity, data volumes, with the trade-offs explained |
+| [`three-tier-ha`](examples/three-tier-ha) | Isolated tiers, bastion, load balancer, anti-affinity, data volumes, with the trade-offs explained; applied on a real cloud |
 | [`building-blocks`](examples/building-blocks) | The building blocks used directly, without the composite |
 
-Every attribute of the model is documented in the [tenant model reference](docs/tenant-model.md).
+A complete multi-tenant architecture built on this module is [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference). Every attribute of the model is documented in the [tenant model reference](docs/tenant-model.md).
 
 ## Requirements and compatibility
 
-| Component | Supported versions | Tested in CI |
+| Component | Supported versions | Tested |
 |---|---|---|
-| OpenTofu | >= 1.9 | 1.9.0 and latest |
-| Terraform | >= 1.9 | 1.9.0 and latest |
-| Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` | pinned minimum and latest; 3.4.0 on a real cloud |
-| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1: the 5 integration stages and the `three-tier-ha` example (see [docs/testing.md](docs/testing.md)); public OpenStack cloud next; DevStack for `cloud-baseline` |
+| OpenTofu | >= 1.9 | CI: 1.9.0 and latest; real cloud: 1.13.2 |
+| Terraform | >= 1.9 | CI: 1.9.0 and latest; real cloud: 1.17.0 (stage 05) |
+| Provider [`terraform-provider-openstack/openstack`](https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest) | `~> 3.2` | CI: pinned minimum and latest; real cloud: 3.4.0 |
+| OpenStack APIs | Keystone v3, Nova, Neutron, Cinder v3, Glance v2; Octavia and Designate optional | Private cloud, OpenStack 2025.1 (OpenStack-Ansible, OVN, Octavia amphora): 5 integration stages and `three-tier-ha`. Public cloud: plans only, apply pending ([testing](docs/testing.md)) |
 
 ## Operating the module
 
-State storage, state encryption, locking, the origin of secrets and the delivery pipeline are **your choices**. The modules work the same with a manual `apply` and with a GitOps pipeline. [docs/operations.md](docs/operations.md) lists the points to decide and common options, without prescribing any:
+State storage, state encryption, locking, the origin of secrets and the delivery pipeline are **your choices**: the modules work the same with a manual `apply` and with a GitOps pipeline. [docs/operations.md](docs/operations.md) lists the points to decide and common options, and the recovery procedures met in tests:
 
-- the state contains generated passwords until the provider supports write-only attributes, so it must be stored and accessed as a secret;
+- treat every state as a secret: it holds every attribute of every resource, and later generated passwords;
 - `sensitive = true` hides values from the CLI output, not from the state;
 - do not put secrets in `user_data`: the metadata service exposes it to the whole project.
 
 ## Versioning and support
 
-- The project follows [Semantic Versioning](https://semver.org/). Before `v1.0.0`, minor versions may contain breaking changes; they are listed in the [changelog](CHANGELOG.md) with migration notes.
-- Pin a version with `?ref=vX.Y.Z` in the module `source`.
-- Only the latest minor release receives fixes before `v1.0.0`.
+- [Semantic Versioning](https://semver.org/). Before `v1.0.0`, minor versions may contain breaking changes; they are listed in the [changelog](CHANGELOG.md) with migration notes. Patch versions never change the interface.
+- Pin a version: `version = "~> 0.1"` from a registry, or `?ref=vX.Y.Z` with a git source.
+- Only the latest minor release receives fixes before `v1.0.0`. How releases are prepared and published: [docs/lifecycle.md](docs/lifecycle.md).
 
 ## Roadmap
 
 | Release | Content | Status |
 |---|---|---|
-| — | Repository skeleton, CI, documentation | done |
-| — | Examples and hand-written tenant model reference, as the interface specification | done |
-| **v0.1.0** | Building blocks `network` ✅, `security-group` ✅, `instance` ✅, `loadbalancer` ✅, `dns` ✅; `modules/cloudinit` ✅; tenant composite ✅ with server groups; output contract ✅; `three-tier-ha` reference example; mocked tests on OpenTofu and Terraform; integration tests on a private OpenStack cloud | released |
-| v0.1.1 | Minimum versions corrected to OpenTofu and Terraform 1.9; validation fix; mocked tests on the lowest supported versions | released |
-| v0.1.2 | Extra floating IPs on a port (one per external network); port `id` in the `instances` output | released |
-| v0.1.x | Integration results on a public OpenStack cloud; fixes they reveal | next |
-| **v0.2.0** | `modules/cloud-baseline` (admin level), tested on DevStack | planned |
+| **v0.1.0** | Building blocks `network`, `security-group`, `instance`, `loadbalancer`, `dns`; `modules/cloudinit`; tenant composite with server groups; output contract; `three-tier-ha`; mocked tests on both tools; integration tests on a private cloud | released 2026-10-26 |
+| v0.1.1 | Minimum versions corrected to OpenTofu and Terraform 1.9; validation fix | released 2026-10-26 |
+| v0.1.2 | Extra floating IPs on a port (one per external network); port `id` in the outputs | released 2026-10-27 |
+| v0.1.x | Integration results on a public OpenStack cloud and the fixes they reveal | waiting for network quotas on the public test project |
+| **v0.2.0** | `modules/cloud-baseline` (admin role), with adoption of existing projects, users and shared objects, tested on DevStack | planned |
 
 ## Reference
 
@@ -241,4 +262,4 @@ Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md). Ne
 
 Copyright © 2025-2026 Cypris Tech and contributors. Licensed under the [Apache License 2.0](LICENSE).
 
-Maintained by [Gregory Gabrielian](https://github.com/CyprisTech) at [Cypris Tech](https://github.com/CyprisTech).
+Maintained by Gregory Gabrielian at [Cypris Tech](https://github.com/CyprisTech).
