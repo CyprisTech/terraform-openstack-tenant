@@ -32,30 +32,30 @@ Compared with lists, maps mean that adding or removing an element never shifts t
 Objects reference each other **by key**: a port names its `network` and `subnet`, a router names its `external_network`, a load balancer pool lists `members` as `"<instance>.<port>"`. Validation rules reject references to keys that do not exist.
 
 ```mermaid
-flowchart LR
-    subgraph existing["existing"]
-        EN["networks.public<br/>subnets.v4"]
+flowchart TB
+    LB["load_balancers.edge"]
+    I["instances.web-1 · ports.main"]
+    R["networks.app · routers.out"]
+    subgraph created["created by the module"]
+        N["networks.app · subnets.main"]
+        SG["security_groups.web"]
+        SV["server_groups.web"]
+    end
+    subgraph existing["existing (adopted)"]
+        EN["networks.public"]
         ES["security_groups.ssh"]
         EZ["dns_zones.public"]
     end
-    subgraph model["created by the module"]
-        N["networks.app<br/>subnets.main"]
-        R["routers.out"]
-        SG["security_groups.web"]
-        SV["server_groups.web"]
-        I["instances.web-1<br/>ports.main"]
-        LB["load_balancers.edge<br/>listeners.https"]
-    end
-    R -- "internal_subnet" --> N
-    R -- "external_network" --> EN
+    LB -- "members: web-1.main" --> I
+    LB -- "vip" --> N
     I -- "network, subnet" --> N
-    I -- "security_groups" --> SG & ES
+    I -- "security_groups" --> SG
+    I -- "security_groups" --> ES
     I -- "server_group" --> SV
     I -- "floating_ip.pool" --> EN
     I -- "dns.zone" --> EZ
-    LB -- "vip.network" --> N
-    LB -- "members: web-1.main" --> I
-    LB -- "floating_ip.dns.zone" --> EZ
+    R -- "internal_subnet" --> N
+    R -- "external_network" --> EN
 ```
 
 Every arrow is a key written in the input. The composite turns keys into IDs (`local.network_ids`, `subnet_ids`, `security_group_ids`, `zone_ids`), whether the target was created in this run or adopted.
