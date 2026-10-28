@@ -22,6 +22,7 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 - [Operating the module](#operating-the-module)
 - [Versioning and support](#versioning-and-support)
 - [Roadmap](#roadmap)
+- [Documentation](#documentation)
 - [Reference](#reference)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -192,6 +193,19 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | v0.1.2 | Extra floating IPs on a port (one per external network); port `id` in the outputs | released 2026-10-27 |
 | v0.1.x | Integration results on a public OpenStack cloud and the fixes they reveal | waiting for network quotas on the public test project |
 | **v0.2.0** | `modules/cloud-baseline` (admin role), with adoption of existing projects, users and shared objects, tested on DevStack | planned |
+
+## Documentation
+
+| Page | Content |
+|---|---|
+| [Tenant model reference](docs/tenant-model.md) | Every attribute of the `tenant` variable and of the building blocks |
+| [Architecture](docs/architecture.md) | Layers, references by key, adoption, stable keys, outputs, known limitations |
+| [Real-cloud pitfalls](docs/pitfalls.md) | What fails on real clouds and why: MTU, resolvers, source NAT, reply routing, PROXY protocol, quotas, DNS |
+| [Testing](docs/testing.md) | Test levels, integration results per cloud, defects found |
+| [Operating the module](docs/operations.md) | State, secrets, locking, pipelines; recovery procedures |
+| [Decisions (ADRs)](docs/adr/README.md) | Module design, output contract, floating IPs per port |
+| [Project lifecycle](docs/lifecycle.md) | Versions, release gates, support |
+| [All documentation](docs/README.md) | Index by audience |
 
 ## Reference
 

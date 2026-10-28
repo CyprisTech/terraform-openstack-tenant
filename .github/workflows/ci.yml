@@ -127,6 +127,14 @@ jobs:
           rm terraform-docs
           git diff --exit-code -- README.md modules/
 
+  docs:
+    name: documentation links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: links and anchors resolve, every page reachable from README.md
+        run: python3 tests/docs/check_links.py
+
   secrets:
     name: gitleaks (full history)
     runs-on: ubuntu-latest

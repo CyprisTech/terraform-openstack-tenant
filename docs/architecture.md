@@ -4,7 +4,7 @@ This document explains how the modules are organised and the rules that make the
 
 ## Three layers
 
-| | Building blocks | Tenant composite | `modules/cloud-baseline` |
+| | Building blocks | Tenant composite | `modules/cloud-baseline` (planned, `v0.2.0`) |
 |---|---|---|---|
 | **Path** | `modules/network`, `security-group`, `instance`, `loadbalancer`, `dns` | repository root | `modules/cloud-baseline` |
 | **Credentials** | Scoped to one project | Scoped to one project | Cloud `admin` role |
@@ -14,7 +14,7 @@ This document explains how the modules are organised and the rules that make the
 
 The split follows the usual criteria for Terraform modules: **encapsulation** (one concern per building block), **privileges** (admin versus project) and **volatility** (long-lived networks versus short-lived instances can live in separate states, see below).
 
-The composite never creates its project: Nova creates instances only in the project of the token. Projects, quotas and role assignments belong to `cloud-baseline`.
+The composite never creates its project: Nova creates instances only in the project of the token. Projects, quotas and role assignments belong to `cloud-baseline`; until it ships, they come from the cloud operator and are used as they are.
 
 ## The input model
 
@@ -31,6 +31,35 @@ Compared with lists, maps mean that adding or removing an element never shifts t
 
 Objects reference each other **by key**: a port names its `network` and `subnet`, a router names its `external_network`, a load balancer pool lists `members` as `"<instance>.<port>"`. Validation rules reject references to keys that do not exist.
 
+```mermaid
+flowchart LR
+    subgraph existing["existing"]
+        EN["networks.public<br/>subnets.v4"]
+        ES["security_groups.ssh"]
+        EZ["dns_zones.public"]
+    end
+    subgraph model["created by the module"]
+        N["networks.app<br/>subnets.main"]
+        R["routers.out"]
+        SG["security_groups.web"]
+        SV["server_groups.web"]
+        I["instances.web-1<br/>ports.main"]
+        LB["load_balancers.edge<br/>listeners.https"]
+    end
+    R -- "internal_subnet" --> N
+    R -- "external_network" --> EN
+    I -- "network, subnet" --> N
+    I -- "security_groups" --> SG & ES
+    I -- "server_group" --> SV
+    I -- "floating_ip.pool" --> EN
+    I -- "dns.zone" --> EZ
+    LB -- "vip.network" --> N
+    LB -- "members: web-1.main" --> I
+    LB -- "floating_ip.dns.zone" --> EZ
+```
+
+Every arrow is a key written in the input. The composite turns keys into IDs (`local.network_ids`, `subnet_ids`, `security_group_ids`, `zone_ids`), whether the target was created in this run or adopted.
+
 ## Adoption by injection
 
 A tenant usually relies on objects it does not own: shared networks, a security group catalog, DNS zones, sometimes volumes holding data. They are declared under `existing` (or with `existing` on a volume), **by ID or by name** (DNS zones always with their name):
@@ -40,20 +69,6 @@ existing = {
   networks        = { transit = { id = module.baseline.networks["transit"].id, subnets = { site-a = { id = module.baseline.subnets["transit/site-a"].id } } } }
   security_groups = { ssh = { name = "baseline-ssh" } }
 }
-```
-
-```mermaid
-flowchart LR
-    subgraph existing["existing = { ... }"]
-        N["networks.transit<br/>id injected"]
-        S["security_groups.ssh<br/>name looked up"]
-    end
-    subgraph created["created by the module"]
-        R["routers.out"]
-        P["ports web-1.main"]
-    end
-    N --> R
-    S --> P
 ```
 
 - **By ID**, nothing is looked up: the object may even be created in the same apply, by `cloud-baseline` or another module of the same root configuration.
@@ -100,7 +115,7 @@ module.tenant.instances = {
 
 `networks`, `subnets`, `security_groups`, `load_balancers` and `dns_zones` follow the same rule. Consume them through remote state or data sources; the modules contain no SSH provisioner.
 
-The output shape is meant to be **provider-neutral**: it contains no OpenStack-specific notion, so that equivalent modules for other clouds can expose the same contract and be swapped below the same upper layers. The contract will be specified in its own ADR.
+The output shape is **provider-neutral** and stable: its attributes, its compatibility rule and what "provider-neutral" means are specified in [ADR-0002](adr/0002-output-contract.md).
 
 ## Lifecycle rules
 
@@ -134,10 +149,13 @@ Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
 
 ## Known limitations
 
-- **No public cloud results yet.** All four integration stages and the `three-tier-ha` example pass on a private OpenStack 2025.1 cloud; the public cloud run comes in a `v0.1.x` release; see [testing](testing.md).
+- **No public cloud results yet.** The five integration stages and the `three-tier-ha` example pass on a private OpenStack 2025.1 cloud; on the public test cloud, plans pass and apply waits for network quotas; see [testing](testing.md). No run yet on a cloud without Octavia or Designate.
 - **One internal subnet per router.** A router connects one subnet of a network; a single router serving several subnets is not modelled yet (use one router per subnet, or segment tiers with security groups on one subnet, as in [`examples/three-tier-ha`](../examples/three-tier-ha)).
 - **TLS termination on Octavia** (`TERMINATED_HTTPS`) needs Barbican container references, not exposed yet; TCP passthrough with the PROXY protocol is supported.
 - **One fixed address per port**, IPv4 or IPv6 without router advertisement settings; no ports without a fixed IP.
 - **Security group rules between local groups** are created by the composite itself, outside `modules/security-group`; their addresses in the state reflect that.
 - **`cloud-baseline` is planned for `v0.2.0`**: until then, projects, quotas, users, shared networks and zones come from elsewhere and are adopted.
+- **No write-only attributes yet.** Nothing in the tenant layers stores a secret today; when `cloud-baseline` generates passwords, they will stay in the state until the provider supports write-only attributes (ADR-0001, D6).
+
+Problems that come from the cloud rather than from the module (MTU, source NAT, quotas, DNS delays) are collected in [real-cloud pitfalls](pitfalls.md).
 
