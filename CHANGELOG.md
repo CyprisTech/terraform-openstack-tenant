@@ -6,11 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-28
+
+Documentation release: the README shown by the registries now matches the delivered state. No change to the modules' interface or behaviour.
+
 ### Added
 
 - ADR-0002, the output contract of the composite (fulfils ADR-0001 D11), and ADR-0003, several floating IPs on one port (the `v0.1.2` decision).
 - Documentation: real-cloud pitfalls (MTU, resolvers, source NAT, reply routing, PROXY protocol, quotas, images, DNS), project lifecycle (versions, release gates, support), diagram of references by key, documentation index in the README; fuller example READMEs and a diagram for `public-edge`.
-- CI: documentation links and anchors checked.
+- CI: documentation links and anchors checked (job `documentation links`).
 
 ### Changed
 
@@ -76,7 +80,8 @@ First release: the tenant layers (building blocks, composite, output contract), 
 - `management_port` and `instances.*.management_port` / `management_egress`: a site convention rather than a general feature. A second port is declared in `ports`; see `examples/adopt-existing` for adding the same port to every instance.
 - The pre-redesign code; it remains available in the history.
 
-[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/CyprisTech/terraform-openstack-tenant/releases/tag/v0.1.0
