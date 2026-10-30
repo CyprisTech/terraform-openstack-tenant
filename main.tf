@@ -119,7 +119,7 @@ module "network" {
 
   routers = {
     for rk, r in each.value.routers : rk => {
-      external_network_id     = local.existing_network_ids[r.external_network]
+      external_network_id     = r.external_network == null ? null : local.existing_network_ids[r.external_network]
       external_subnet_id      = r.external_subnet == null ? null : local.existing_subnet_ids["${r.external_network}/${r.external_subnet}"]
       external_ip             = r.external_ip
       internal_subnet         = r.internal_subnet
@@ -128,6 +128,14 @@ module "network" {
       advertise_routes        = r.advertise_routes
       admin_state_up          = r.admin_state_up
       availability_zone_hints = r.availability_zone_hints
+      interfaces = {
+        for ik, i in r.interfaces : ik => {
+          network_id = local.existing_network_ids[i.network]
+          subnet_id  = i.subnet == null ? null : local.existing_subnet_ids["${i.network}/${i.subnet}"]
+          ip_address = i.ip
+        }
+      }
+      routes = r.routes
     }
   }
 }

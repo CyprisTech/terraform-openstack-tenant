@@ -73,11 +73,11 @@ Map key: network name (unless `name` is set).
 | `allocation_pools` | list({start, end}) | whole range | Addresses DHCP may allocate |
 | `host_routes` | list({destination, nexthop}) | `[]` | Static routes pushed by DHCP |
 
-**`routers.<key>`** — one router connects one subnet of this network to one external network. Several routers per network let each one reach a different network plane.
+**`routers.<key>`** — one router is attached to one subnet of this network. It joins other networks through a **gateway** on an external network (source NAT, floating IPs) and/or **interfaces** on other networks, such as a private network shared with the project by RBAC (no translation). Several routers per network let each one reach a different network plane.
 
 | Attribute | Type | Default | Description |
 |---|---|---|---|
-| `external_network` | string | required | Key in `existing.networks` |
+| `external_network` | string | none | Key in `existing.networks`; without it, the router has no gateway |
 | `external_subnet` | string | any | Key of the external subnet for the gateway |
 | `external_ip` | string | allocated | Fixed gateway address on the external network |
 | `internal_subnet` | string | required | Key of the subnet of this network |
@@ -86,6 +86,10 @@ Map key: network name (unless `name` is set).
 | `advertise_routes` | list(string) | `[]` | Destinations pushed to the internal subnet as host routes via this router |
 | `admin_state_up` | bool | `true` | |
 | `availability_zone_hints` | list(string) | `[]` | |
+| `interfaces` | map | `{}` | Interfaces on other networks, keyed by label: `network` (key in `existing.networks`), `subnet` (key of a subnet of that network), `ip` (fixed address; requires `subnet`) |
+| `routes` | list(object) | `[]` | Static routes of the router (Neutron extra routes): `destination` (CIDR), `next_hop` (address on a subnet the router is attached to) |
+
+**Interfaces and routes.** An interface on a shared private network gives the tenant a path to that network without address translation: the target sees the instance's real address. The return path then needs routes: on this router towards the ranges reached through the interface, and on the routers of the other side towards this tenant's range. The routers output (`interfaces.<label>.ip`) gives the addresses to use as next hops.
 
 **Default gateway.** Instances use the subnet's gateway address as default route. When no router of a subnet sets `internal_ip` or `default_gateway`, the **first router of that subnet in key order** takes the gateway address; the others get an allocated address and are reached through `advertise_routes`. Set `default_gateway = true` on another router to choose it, or manage every address with `internal_ip`.
 
@@ -226,7 +230,7 @@ The composite exposes outputs keyed like the input, with a fixed shape (absent v
 |---|---|
 | `instances` | `<name> => { id, az, labels, ports = { <port> => { id, ip, floating_ip, floating_ips, fqdn } } }`; `floating_ips` maps each `extra_floating_ips` label to its address (`{}` when none) |
 | `server_groups` | `<name> => { id, policy }` |
-| `networks` | `<name> => { id, subnets = { <subnet> => { id, cidr } }, routers = { <router> => { id, internal_ip } } }` |
+| `networks` | `<name> => { id, subnets = { <subnet> => { id, cidr } }, routers = { <router> => { id, internal_ip, interfaces = { <label> => { port_id, ip } } } } }` |
 | `security_groups` | `<name> => { id }` |
 | `load_balancers` | `<name> => { id, vip, floating_ip, fqdns }` |
 | `dns_zones` | `<name> => { id, name }` |
@@ -237,7 +241,7 @@ The building blocks take **IDs** instead of keys: wiring them together is the ca
 
 | Module | Main inputs | Main outputs |
 |---|---|---|
-| [`modules/network`](../modules/network) ✅ | `name`, `project_id`, `mtu`, `subnets` (as above), `routers` with `external_network_id`, `external_subnet_id`, `external_ip`, `internal_subnet`, `internal_ip`, `advertise_routes` | `id`, `name`, `subnets`, `routers` |
+| [`modules/network`](../modules/network) ✅ | `name`, `project_id`, `mtu`, `subnets` (as above), `routers` with `external_network_id`, `external_subnet_id`, `external_ip`, `internal_subnet`, `internal_ip`, `advertise_routes`, `interfaces`, `routes` | `id`, `name`, `subnets`, `routers` |
 | [`modules/security-group`](../modules/security-group) ✅ | `name`, `description`, `project_id`, `delete_default_rules`, `rules` with `remote_group_id` (an ID, or `"self"`) instead of `remote_group` | `id`, `name`, `rule_ids` |
 | [`modules/instance`](../modules/instance) ✅ | `name`, `project_id`, `az`, `flavor` / `flavor_id`, `image` / `image_id`, `boot`, `ports` with `network_id`, `subnet_id`, `fixed_ip`, `security_group_ids`, `port_security_enabled`, `allowed_address_pairs`, `floating_ip` (`pool`, `subnet_id`, `dns`), `extra_floating_ips` (map of the same shape) and `dns` (entries `{ name, zone_id, zone_name, ttl }`); `volumes`; `user_data`; `key_pair`; `server_group_id`; `labels`; `metadata`; `default_ttl` | `id`, `name`, `az`, `labels`, `ports`, `volumes` |
 | [`modules/loadbalancer`](../modules/loadbalancer) ✅ | `name`, `project_id`, `vip` (`subnet_id`, `address`), `flavor_id`, `availability_zone`, `security_group_ids`, `floating_ip` (`pool`, `subnet_id`, `dns`), `listeners` with `pool.members` keyed by name as `{ address, subnet_id, port, weight, backup }`; `default_ttl` | `id`, `vip`, `floating_ip`, `fqdns`, `listeners` |

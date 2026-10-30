@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Routers can join other networks through **interfaces** (`interfaces`, for example a private network shared with the project by RBAC) and carry **static routes** (`routes`, Neutron extra routes). The `networks` output lists each router's interfaces by label (`port_id`, `ip`).
+- A router can be created **without a gateway**: `external_network` (composite) and `external_network_id` (network module) are now optional.
+
+No change for existing configurations.
+
 ## [0.1.3] - 2026-10-28
 
 Documentation release: the README shown by the registries now matches the delivered state. No change to the modules' interface or behaviour.

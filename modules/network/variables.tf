@@ -61,8 +61,11 @@ variable "subnets" {
 
 variable "routers" {
   description = <<-EOT
-    Routers connecting one subnet of this network to an external network, keyed by name.
-    - external_network_id: network providing the gateway.
+    Routers of this network, keyed by name. Each router is attached to one subnet of this network
+    and can join other networks in two ways: a gateway on an external network (source NAT,
+    floating IPs) and interfaces on other networks, such as private networks shared with this
+    project (no translation; return traffic needs routes).
+    - external_network_id: network providing the gateway; null for a router without gateway.
     - external_subnet_id: subnet of that network for the gateway address; null lets Neutron choose.
     - external_ip: fixed gateway address; requires external_subnet_id.
     - internal_subnet: key of the subnet of this network the router is attached to.
@@ -72,9 +75,13 @@ variable "routers" {
       router of that subnet in key order is the default gateway; other routers get an
       allocated address and are reached through advertise_routes.
     - advertise_routes: destinations pushed to the internal subnet as host routes via this router.
+    - interfaces: interfaces on other networks, keyed by label: network_id, and optionally
+      subnet_id and ip_address (fixed address on that subnet).
+    - routes: static routes of the router (Neutron extra routes): destination and next_hop. The
+      next hop must be on a subnet the router is attached to.
   EOT
   type = map(object({
-    external_network_id     = string
+    external_network_id     = optional(string)
     external_subnet_id      = optional(string)
     external_ip             = optional(string)
     internal_subnet         = string
@@ -83,6 +90,12 @@ variable "routers" {
     advertise_routes        = optional(list(string), [])
     admin_state_up          = optional(bool, true)
     availability_zone_hints = optional(list(string), [])
+    interfaces = optional(map(object({
+      network_id = string
+      subnet_id  = optional(string)
+      ip_address = optional(string)
+    })), {})
+    routes = optional(list(object({ destination = string, next_hop = string })), [])
   }))
   default = {}
 
@@ -107,5 +120,27 @@ variable "routers" {
   validation {
     condition     = alltrue([for r in values(var.routers) : r.external_ip == null || r.external_subnet_id != null])
     error_message = "A router external_ip requires external_subnet_id."
+  }
+
+  validation {
+    condition     = alltrue([for r in values(var.routers) : r.external_network_id != null || r.external_subnet_id == null])
+    error_message = "A router external_subnet_id requires external_network_id."
+  }
+
+  validation {
+    condition     = alltrue(flatten([for r in values(var.routers) : [for i in values(r.interfaces) : i.ip_address == null || i.subnet_id != null]]))
+    error_message = "A router interface ip_address requires subnet_id."
+  }
+
+  validation {
+    condition = alltrue(flatten([for r in values(var.routers) : [
+      for rt in r.routes : can(cidrhost(rt.destination, 0)) && can(cidrhost("${rt.next_hop}/${strcontains(rt.next_hop, ":") ? 128 : 32}", 0))
+    ]]))
+    error_message = "Each router route needs a destination in CIDR notation and a next_hop address."
+  }
+
+  validation {
+    condition     = alltrue([for r in values(var.routers) : length(r.routes) == length(distinct([for rt in r.routes : rt.destination]))])
+    error_message = "A router cannot have two routes to the same destination."
   }
 }

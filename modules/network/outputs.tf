@@ -20,11 +20,17 @@ output "subnets" {
 }
 
 output "routers" {
-  description = "Routers keyed like the input: { id, internal_ip }."
+  description = "Routers keyed like the input: { id, internal_ip, interfaces = { <label> = { port_id, ip } } }."
   value = {
     for k, r in openstack_networking_router_v2.this : k => {
       id          = r.id
       internal_ip = openstack_networking_port_v2.router[k].all_fixed_ips[0]
+      interfaces = {
+        for ik, i in local.interfaces : i.label => {
+          port_id = openstack_networking_port_v2.interface[ik].id
+          ip      = openstack_networking_port_v2.interface[ik].all_fixed_ips[0]
+        } if i.router == k
+      }
     }
   }
 }

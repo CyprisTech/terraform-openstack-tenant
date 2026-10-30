@@ -292,3 +292,59 @@ run "rejects_unknown_zone_on_extra_floating_ip" {
 
   expect_failures = [var.tenant]
 }
+
+run "router_on_shared_private_planes" {
+  command = plan
+
+  variables {
+    tenant = {
+      existing = {
+        networks = {
+          svc_public = { id = "net-svc", subnets = { v4 = { id = "sub-svc" } } }
+          public     = { name = "public" }
+        }
+      }
+      networks = {
+        app = {
+          subnets = { main = { cidr = "10.21.0.0/24" } }
+          routers = {
+            egress = { external_network = "public", internal_subnet = "main" }
+            planes = {
+              internal_subnet = "main"
+              internal_ip     = "10.21.0.2"
+              interfaces      = { svc_public = { network = "svc_public", subnet = "v4", ip = "172.31.0.7" } }
+              routes          = [{ destination = "10.20.0.0/24", next_hop = "172.31.0.5" }]
+            }
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = keys(module.network["app"].routers["planes"].interfaces) == ["svc_public"]
+    error_message = "The networks output exposes router interfaces by label."
+  }
+
+  assert {
+    condition     = module.network["app"].routers["egress"].interfaces == {}
+    error_message = "A router without interfaces exposes an empty map."
+  }
+}
+
+run "rejects_interface_network_not_adopted" {
+  command = plan
+
+  variables {
+    tenant = {
+      networks = {
+        app = {
+          subnets = { main = { cidr = "10.21.0.0/24" } }
+          routers = { planes = { internal_subnet = "main", interfaces = { p = { network = "missing" } } } }
+        }
+      }
+    }
+  }
+
+  expect_failures = [var.tenant]
+}
