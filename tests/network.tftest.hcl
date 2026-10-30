@@ -170,3 +170,95 @@ run "rejects_external_ip_without_subnet" {
 
   expect_failures = [var.routers]
 }
+
+run "interfaces_and_routes" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = {
+      egress = { external_network_id = "ext-public", internal_subnet = "main" }
+      planes = {
+        internal_subnet = "main"
+        internal_ip     = "10.21.0.2"
+        interfaces = {
+          svc_public = { network_id = "net-svc", subnet_id = "sub-svc", ip_address = "172.31.0.7" }
+          monitoring = { network_id = "net-mon" }
+        }
+        routes = [
+          { destination = "10.20.0.0/24", next_hop = "172.31.0.5" },
+          { destination = "10.40.0.0/24", next_hop = "172.31.1.5" },
+        ]
+      }
+    }
+  }
+
+  assert {
+    condition     = toset(keys(openstack_networking_port_v2.interface)) == toset(["planes/svc_public", "planes/monitoring"])
+    error_message = "Interfaces must be keyed by router and label."
+  }
+
+  assert {
+    condition     = openstack_networking_port_v2.interface["planes/svc_public"].name == "app-planes-svc_public" && length(openstack_networking_port_v2.interface["planes/monitoring"].fixed_ip) == 0
+    error_message = "Interface ports are named <network>-<router>-<label>; fixed_ip only when subnet_id is given."
+  }
+
+  assert {
+    condition     = toset(keys(openstack_networking_router_route_v2.this)) == toset(["planes/10.20.0.0/24", "planes/10.40.0.0/24"])
+    error_message = "Router routes must be keyed by router and destination, known at plan time."
+  }
+
+  assert {
+    condition     = keys(output.routers["planes"].interfaces) == ["monitoring", "svc_public"] && length(output.routers["egress"].interfaces) == 0
+    error_message = "The routers output lists the interfaces of each router by label."
+  }
+}
+
+run "rejects_interface_ip_without_subnet" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = { r = { internal_subnet = "main", interfaces = { p = { network_id = "n", ip_address = "172.31.0.7" } } } }
+  }
+
+  expect_failures = [var.routers]
+}
+
+run "rejects_invalid_route" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = { r = { internal_subnet = "main", routes = [{ destination = "10.20.0.0", next_hop = "172.31.0.5" }] } }
+  }
+
+  expect_failures = [var.routers]
+}
+
+run "rejects_duplicate_route_destination" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = { r = { internal_subnet = "main", routes = [{ destination = "10.20.0.0/24", next_hop = "172.31.0.5" }, { destination = "10.20.0.0/24", next_hop = "172.31.0.6" }] } }
+  }
+
+  expect_failures = [var.routers]
+}

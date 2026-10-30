@@ -34,7 +34,7 @@ variable "tenant" {
         host_routes      = optional(list(object({ destination = string, nexthop = string })), [])
       }))
       routers = optional(map(object({
-        external_network        = string # key in existing.networks
+        external_network        = optional(string) # key in existing.networks; null: no gateway
         external_subnet         = optional(string)
         external_ip             = optional(string)
         internal_subnet         = string # key in this network's subnets
@@ -43,6 +43,12 @@ variable "tenant" {
         advertise_routes        = optional(list(string), [])
         admin_state_up          = optional(bool, true)
         availability_zone_hints = optional(list(string), [])
+        interfaces = optional(map(object({
+          network = string           # key in existing.networks
+          subnet  = optional(string) # key of a subnet of that network in existing.networks
+          ip      = optional(string)
+        })), {})
+        routes = optional(list(object({ destination = string, next_hop = string })), [])
       })), {})
     })), {})
 
@@ -163,10 +169,19 @@ variable "tenant" {
   validation {
     condition = alltrue(flatten([
       for nk, n in var.tenant.networks : [
-        for rk, r in n.routers : contains(keys(var.tenant.existing.networks), r.external_network)
+        for rk, r in n.routers : r.external_network == null ? true : contains(keys(var.tenant.existing.networks), r.external_network)
       ]
     ]))
     error_message = "Each router external_network must be a key of tenant.existing.networks."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for nk, n in var.tenant.networks : [
+        for rk, r in n.routers : [for ik, i in r.interfaces : contains(keys(var.tenant.existing.networks), i.network)]
+      ]
+    ]))
+    error_message = "Each router interface network must be a key of tenant.existing.networks."
   }
 
   validation {

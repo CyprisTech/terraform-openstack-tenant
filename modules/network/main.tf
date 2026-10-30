@@ -75,7 +75,51 @@ resource "openstack_networking_router_interface_v2" "this" {
   port_id   = openstack_networking_port_v2.router[each.key].id
 }
 
+# Interfaces on other networks (for example a private network shared with this
+# project by RBAC): one port per interface, created in this project.
+resource "openstack_networking_port_v2" "interface" {
+  for_each = local.interfaces
+
+  name       = "${var.name}-${each.value.router}-${each.value.label}"
+  tenant_id  = var.project_id
+  network_id = each.value.network_id
+
+  dynamic "fixed_ip" {
+    for_each = each.value.subnet_id == null ? [] : [1]
+    content {
+      subnet_id  = each.value.subnet_id
+      ip_address = each.value.ip_address
+    }
+  }
+}
+
+resource "openstack_networking_router_interface_v2" "interface" {
+  for_each = local.interfaces
+
+  router_id = openstack_networking_router_v2.this[each.value.router].id
+  port_id   = openstack_networking_port_v2.interface[each.key].id
+}
+
+resource "openstack_networking_router_route_v2" "this" {
+  for_each = local.router_routes
+
+  router_id        = openstack_networking_router_v2.this[each.value.router].id
+  destination_cidr = each.value.destination
+  next_hop         = each.value.next_hop
+
+  # The next hop must be on a subnet the router is attached to.
+  depends_on = [openstack_networking_router_interface_v2.this, openstack_networking_router_interface_v2.interface]
+}
+
 locals {
+  interfaces = merge([
+    for rk, r in var.routers : { for ik, i in r.interfaces : "${rk}/${ik}" => merge(i, { router = rk, label = ik }) }
+  ]...)
+
+  router_routes = merge([
+    for rk, r in var.routers : { for rt in r.routes : "${rk}/${rt.destination}" => merge(rt, { router = rk }) }
+  ]...)
+
   # The router holding each subnet's gateway address: the one that sets
   # default_gateway = true, otherwise the first router of the subnet in key
   # order, unless some router of the subnet manages its address explicitly.
