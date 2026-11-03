@@ -37,6 +37,8 @@ A router with source NAT (the default on an external gateway) replaces the insta
 
 With [`extra_floating_ips`](adr/0003-floating-ips-per-port.md), each floating IP arrives through its own router, but **replies leave through the routes of the instance**. A floating IP only serves clients whose addresses are routed back through its router: advertise those ranges with `advertise_routes` on that router. Replies to other clients leave through the default gateway with the wrong source address and are dropped. A client must also be allowed by its own security groups to open the connection (egress rules).
 
+The behaviour was verified on OVN only, where each floating IP is handled by the router of its network. One floating IP per address is the simpler design: publish a service on one network, and let the instance initiate the flows it needs on the others (for example, push its metrics instead of being scraped through a second floating IP).
+
 ## PROXY protocol
 
 With `pool.protocol = "PROXY"`, Octavia adds a PROXY header so that backends see the client address. **Exactly one header** must reach the backend: when a backend is itself behind another proxy or load balancer that adds a header, TLS fails. Let only the first hop add it, and configure the backend to accept it only from that hop's addresses.
