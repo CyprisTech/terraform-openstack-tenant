@@ -32,6 +32,10 @@ Mocked tests cannot see how a real cloud and the provider behave (attributes rea
 - Outputs: `floating_ip`, `floating_ips = { transit = ... }` and the port `id`.
 - A data-path test of the same layout (two floating IPs on one port, each through its own router) passed on the same cloud: TCP through both floating IPs from a routed client, 6/6. Replies leave through the routes of the instance, so each floating IP serves the clients whose addresses are routed back through its router (see [tenant model](tenant-model.md)).
 
+#### Router interfaces and routes (2026-10-31 and 2026-11-02, before `v0.1.4`)
+
+Used by [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference) on the same cloud, each stack in its own project: networks of a hub project shared by RBAC and joined by the tenants' routers through **interfaces**, routers without a gateway, **static routes** on the attached routers and on the hub's transit router. Full scenario in both of its plane modes, from empty projects: every plan empty after apply, end-to-end HTTPS and isolation tests passing, destroy without leftover. Mocked tests in `tests/network.tftest.hcl` on OpenTofu and Terraform.
+
 #### Example `three-tier-ha` (2026-10-26)
 
 Applied from `examples/three-tier-ha` on the same cloud: 51 resources in 130 s, **empty plan after apply**, 51 destroyed in 90 s.

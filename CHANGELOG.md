@@ -6,12 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-03
+
 ### Added
 
 - Routers can join other networks through **interfaces** (`interfaces`, for example a private network shared with the project by RBAC) and carry **static routes** (`routes`, Neutron extra routes). The `networks` output lists each router's interfaces by label (`port_id`, `ip`).
 - A router can be created **without a gateway**: `external_network` (composite) and `external_network_id` (network module) are now optional.
 
 No change for existing configurations.
+
+### Documentation
+
+- Pitfalls: several floating IPs on one port were verified on OVN only; one floating IP per address is the simpler design.
+- Testing: router interfaces and routes, as used by openstack-multitenant-reference on a private cloud.
 
 ## [0.1.3] - 2026-10-28
 
@@ -87,7 +94,8 @@ First release: the tenant layers (building blocks, composite, output contract), 
 - `management_port` and `instances.*.management_port` / `management_egress`: a site convention rather than a general feature. A second port is declared in `ports`; see `examples/adopt-existing` for adding the same port to every instance.
 - The pre-redesign code; it remains available in the history.
 
-[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.0...v0.1.1

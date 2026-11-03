@@ -192,6 +192,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | v0.1.1 | Minimum versions corrected to OpenTofu and Terraform 1.9; validation fix | released 2026-10-26 |
 | v0.1.2 | Extra floating IPs on a port (one per external network); port `id` in the outputs | released 2026-10-27 |
 | v0.1.3 | Documentation: delivered and planned features apart, output contract and floating IP ADRs, real-cloud pitfalls, examples; no interface change | released 2026-10-28 |
+| v0.1.4 | Routers joining other networks through interfaces, static routes, routers without a gateway; no change for existing configurations | released 2026-11-03 |
 | v0.1.x | Integration results on a public OpenStack cloud and the fixes they reveal | waiting for network quotas on the public test project |
 | **v0.2.0** | `modules/cloud-baseline` (admin role), with adoption of existing projects, users and shared objects, tested on DevStack | planned |
 
