@@ -4,10 +4,10 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![OpenTofu >= 1.9](https://img.shields.io/badge/OpenTofu-%3E%3D1.9-ffda18?logo=opentofu)](https://opentofu.org)
 [![Terraform >= 1.9](https://img.shields.io/badge/Terraform-%3E%3D1.9-844fba?logo=terraform)](https://www.terraform.io)
-[![Latest release](https://img.shields.io/github/v/release/CyprisTech/terraform-openstack-tenant?sort=semver)](https://github.com/CyprisTech/terraform-openstack-tenant/releases)
+[![Latest release](https://img.shields.io/github/v/release/CyprisTech/terraform-openstack-tenant?sort=semver&label=Release)](https://github.com/CyprisTech/terraform-openstack-tenant/releases)
 [![Terraform Registry](https://img.shields.io/badge/Terraform_Registry-CyprisTech%2Ftenant%2Fopenstack-844fba?logo=terraform)](https://registry.terraform.io/modules/CyprisTech/tenant/openstack/latest)
 [![OpenTofu Registry](https://img.shields.io/badge/OpenTofu_Registry-cypristech%2Ftenant%2Fopenstack-ffda18?logo=opentofu)](https://search.opentofu.org/module/cypristech/tenant/openstack/latest)
-[![Tested on OpenStack 2025.1](https://img.shields.io/badge/Tested%20on-OpenStack%202025.1%20(Epoxy)-red)](docs/testing.md)
+[![Tested on OpenStack 2025.1](https://img.shields.io/badge/Tested%20on-OpenStack%202025.1%20%28Epoxy%29-red)](docs/testing.md)
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/CyprisTech/terraform-openstack-tenant?label=OpenSSF%20Scorecard)](https://scorecard.dev/viewer/?uri=github.com/CyprisTech/terraform-openstack-tenant)
 [![OpenSSF Best Practices](https://img.shields.io/cii/level/16341?label=OpenSSF%20Best%20Practices)](https://www.bestpractices.dev/projects/16341)
 
