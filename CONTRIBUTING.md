@@ -41,6 +41,8 @@ pre-commit run --all-files          # everything above plus gitleaks
 
 Integration tests against a real OpenStack cloud are run by the maintainers on dedicated test infrastructure; they are not required from contributors.
 
+**Test policy.** A new feature or a bug fix comes with a test: a mocked `tofu test` case under `tests/`. Behaviour that only a real cloud shows is checked by the maintainers on the integration infrastructure and recorded in [docs/testing.md](docs/testing.md).
+
 ## Coding conventions
 
 These rules come from [ADR-0001](docs/adr/0001-module-design.md):
