@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (implemented in `v0.1.0`, extended in `v0.1.2`; recorded 2026-10-28)
 - **Date:** 2026-10-28
-- **Deciders:** Gregory Gabrielian
+- **Deciders:** maintainers
 - **Fulfils:** [ADR-0001](0001-module-design.md), D11 (the contract was to be specified in its own ADR)
 
 ## Context

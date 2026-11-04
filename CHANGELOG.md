@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `CODEOWNERS`: the maintainers team reviews every change; ADRs name the maintainers as deciders.
 - CodeQL workflow: static analysis of the GitHub Actions workflows and the Python scripts (HCL is not supported by CodeQL).
 - README badges: tested OpenStack release, OpenSSF Scorecard, latest release, Terraform and OpenTofu registries; OpenSSF Scorecard workflow (weekly and on every push to `main`).
 

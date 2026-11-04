@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (implemented in `v0.1.2`; recorded 2026-10-28)
 - **Date:** 2026-10-27
-- **Deciders:** Gregory Gabrielian
+- **Deciders:** maintainers
 
 ## Context
 
