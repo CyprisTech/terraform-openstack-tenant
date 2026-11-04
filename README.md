@@ -9,6 +9,7 @@
 [![OpenTofu Registry](https://img.shields.io/badge/OpenTofu_Registry-cypristech%2Ftenant%2Fopenstack-ffda18?logo=opentofu)](https://search.opentofu.org/module/cypristech/tenant/openstack/latest)
 [![Tested on OpenStack 2025.1](https://img.shields.io/badge/tested_on-OpenStack_2025.1_(Epoxy)-red)](docs/testing.md)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CyprisTech/terraform-openstack-tenant/badge)](https://scorecard.dev/viewer/?uri=github.com/CyprisTech/terraform-openstack-tenant)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16341/badge)](https://www.bestpractices.dev/projects/16341)
 
 OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**, on any OpenStack cloud, public or private, **with a member role on the project only**: networks, routers, security groups, server groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects owned elsewhere (shared networks, security groups, DNS zones, volumes) are **adopted** instead of recreated.
 
