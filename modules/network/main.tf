@@ -66,6 +66,11 @@ resource "openstack_networking_port_v2" "router" {
       null
     )
   }
+
+  # Neutron deletes the port with its router: a new router needs a new port.
+  lifecycle {
+    replace_triggered_by = [openstack_networking_router_v2.this[each.key].id]
+  }
 }
 
 resource "openstack_networking_router_interface_v2" "this" {

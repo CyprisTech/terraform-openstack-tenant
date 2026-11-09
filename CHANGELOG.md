@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CodeQL workflow: static analysis of the GitHub Actions workflows and the Python scripts (HCL is not supported by CodeQL).
 - README badges: tested OpenStack release, OpenSSF Scorecard, latest release, Terraform and OpenTofu registries; OpenSSF Scorecard workflow (weekly and on every push to `main`).
 
+### Fixed
+
+- `network`: the port of a router interface is replaced with its router. Neutron deletes the port with the router, and the next apply failed with `PortNotFound`.
+
 ## [0.1.4] - 2026-11-03
 
 ### Added
