@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Guide [taking over existing objects](docs/takeover.md): adoption versus takeover, the `import` address of every object, what changes in place and what is replaced. An instance is replaced on takeover: the provider does not record the port of an imported instance.
 - Integration stage `06-takeover`: objects created as with the CLI, then taken over by the module with `import` blocks.
 
+### Changed
+
+- `cloud-baseline`, planned for `v0.2.0`, moved to its own repository, `terraform-openstack-cloud-baseline`, with its own versions; README, architecture and tenant model updated.
+
 ## [0.1.5] - 2026-11-09
 
 No change for existing configurations.
