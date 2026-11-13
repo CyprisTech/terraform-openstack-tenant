@@ -32,6 +32,8 @@ The composite creates nothing at the project level: all resources go to the **pr
 
 ## `existing`
 
+To manage objects created by hand or by another tool instead of referencing them, see [taking over existing objects](takeover.md).
+
 Objects created by another stack, another team or the console. Networks, subnets and security groups are given **by exactly one of `id` or `name`**; DNS zones always give their `name` (it builds record names) and optionally their `id`:
 
 - with `id`, nothing is looked up: the ID may come from another module in the same configuration, even if that object is created in the same apply;
