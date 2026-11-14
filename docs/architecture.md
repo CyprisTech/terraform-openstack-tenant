@@ -4,9 +4,9 @@ This document explains how the modules are organised and the rules that make the
 
 ## Three layers
 
-| | Building blocks | Tenant composite | `modules/cloud-baseline` (planned, `v0.2.0`) |
+| | Building blocks | Tenant composite | Admin-level foundation (separate repository) |
 |---|---|---|---|
-| **Path** | `modules/network`, `security-group`, `instance`, `loadbalancer`, `dns` | repository root | `modules/cloud-baseline` |
+| **Path** | `modules/network`, `security-group`, `instance`, `loadbalancer`, `dns` | repository root | `terraform-openstack-cloud-baseline` |
 | **Credentials** | Scoped to one project | Scoped to one project | Cloud `admin` role |
 | **Interface** | Small, one concern | One object describing the tenant | One object describing the cloud baseline |
 | **Manages** | One kind of resource and what it strictly needs | Everything inside a project, by calling the building blocks | Projects, quotas, users, groups, role assignments, aggregates, flavors, images, provider and shared networks, shared security group catalog, DNS zones |
@@ -14,7 +14,7 @@ This document explains how the modules are organised and the rules that make the
 
 The split follows the usual criteria for Terraform modules: **encapsulation** (one concern per building block), **privileges** (admin versus project) and **volatility** (long-lived networks versus short-lived instances can live in separate states, see below).
 
-The composite never creates its project: Nova creates instances only in the project of the token. Projects, quotas and role assignments belong to `cloud-baseline`; until it ships, they come from the cloud operator and are used as they are.
+The composite never creates its project: Nova creates instances only in the project of the token. Projects, quotas and role assignments belong to the admin-level foundation, `terraform-openstack-cloud-baseline`; whatever creates them, the composite adopts them as they are.
 
 ## The input model
 
@@ -154,8 +154,8 @@ Where each decision of [ADR-0001](adr/0001-module-design.md) lives in the code:
 - **TLS termination on Octavia** (`TERMINATED_HTTPS`) needs Barbican container references, not exposed yet; TCP passthrough with the PROXY protocol is supported.
 - **One fixed address per port**, IPv4 or IPv6 without router advertisement settings; no ports without a fixed IP.
 - **Security group rules between local groups** are created by the composite itself, outside `modules/security-group`; their addresses in the state reflect that.
-- **`cloud-baseline` is planned for `v0.2.0`**: until then, projects, quotas, users, shared networks and zones come from elsewhere and are adopted.
-- **No write-only attributes yet.** Nothing in the tenant layers stores a secret today; when `cloud-baseline` generates passwords, they will stay in the state until the provider supports write-only attributes (ADR-0001, D6).
+- **No admin-level objects**: projects, quotas, users, shared networks and zones come from elsewhere (`terraform-openstack-cloud-baseline`, or the cloud operator) and are adopted.
+- **No write-only attributes yet.** Nothing in the tenant layers stores a secret today; when the admin-level foundation generates passwords, they stay in its state until the provider supports write-only attributes (ADR-0001, D6).
 
 Problems that come from the cloud rather than from the module (MTU, source NAT, quotas, DNS delays) are collected in [real-cloud pitfalls](pitfalls.md).
 

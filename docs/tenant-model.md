@@ -28,7 +28,7 @@ This page documents every attribute of the `tenant` variable of the composite mo
 
 ## Project
 
-The composite creates nothing at the project level: all resources go to the **project of the provider's credentials**, and a member role is enough. Projects, quotas and role assignments are created by `cloud-baseline` (`v0.2.0`). Nova cannot create instances in another project than the token's, so a composite creating its own project could not place its instances in it.
+The composite creates nothing at the project level: all resources go to the **project of the provider's credentials**, and a member role is enough. Projects, quotas and role assignments are created at the admin level (`terraform-openstack-cloud-baseline`, or the cloud operator). Nova cannot create instances in another project than the token's, so a composite creating its own project could not place its instances in it.
 
 ## `existing`
 

@@ -14,7 +14,7 @@
 OpenTofu and Terraform modules that describe an **OpenStack tenant in a single declarative model**, on any OpenStack cloud, public or private, **with a member role on the project only**: networks, routers, security groups, server groups, instances, volumes, floating IPs, Octavia load balancers and Designate DNS. Objects owned elsewhere (shared networks, security groups, DNS zones, volumes) are **adopted** instead of recreated.
 
 > [!NOTE]
-> **`v0.1.x`: the tenant layers.** Tested with mocked providers on OpenTofu and Terraform, on a private OpenStack 2025.1 cloud, and in production-like use by [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference) ([test report](docs/testing.md)). The admin-level module `cloud-baseline` is planned for `v0.2.0`; the public cloud run is pending (see [testing](docs/testing.md#public-cloud-ovhcloud-public-cloud-region-bhs5-october-2026)). Before `v1.0.0`, minor versions may change the interface; the [changelog](CHANGELOG.md) gives migration notes.
+> **`v0.1.x`: the tenant layers.** Tested with mocked providers on OpenTofu and Terraform, on a private OpenStack 2025.1 cloud, and in production-like use by [openstack-multitenant-reference](https://github.com/CyprisTech/openstack-multitenant-reference) ([test report](docs/testing.md)). The admin-level foundation (`cloud-baseline`) is developed in a separate repository, `terraform-openstack-cloud-baseline`; the public cloud run is pending (see [testing](docs/testing.md#public-cloud-ovhcloud-public-cloud-region-bhs5-october-2026)). Before `v1.0.0`, minor versions may change the interface; the [changelog](CHANGELOG.md) gives migration notes.
 
 ## Table of contents
 
@@ -38,7 +38,7 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 
 - **Teams consuming an OpenStack cloud without admin rights**, notably public and sovereign European clouds: one model per project, no admin role, no assumption on the deployment tool or vendor of the cloud.
 - **Platform teams** that build several tenants on one cloud and need stable outputs to chain configuration tools, Kubernetes or inventories.
-- **Operators of private clouds**, later: `cloud-baseline` (`v0.2.0`) will cover projects, quotas, users and shared objects.
+- **Operators of private clouds**, later: projects, quotas, users and shared objects belong to the admin-level foundation, developed in a separate repository, `terraform-openstack-cloud-baseline`.
 
 ## What it demonstrates
 
@@ -66,16 +66,16 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 | **Bootstrap** | `modules/cloudinit`: users, packages, files; data disks formatted only when empty and mounted by label at every boot |
 | **Composition** | Building blocks usable alone; provider-neutral outputs for upper layers |
 
-**Planned (`v0.2.0`, `modules/cloud-baseline`, admin role):** projects and quotas, users, groups and role assignments, application credentials, flavors, images and aggregates, provider and shared networks, a shared security group catalog with explicit RBAC targets, DNS zones created for or shared with tenants. The input model is specified in [ADR-0001 § D4](docs/adr/0001-module-design.md#d4-cloud-baseline-input-model).
+**Admin level, in a separate repository:** projects and quotas, users, groups and role assignments, flavors, images, provider and shared networks, a shared security group catalog, DNS zones created for or shared with tenants belong to `terraform-openstack-cloud-baseline`, developed from the model of [ADR-0001 § D4](docs/adr/0001-module-design.md#d4-cloud-baseline-input-model). Its outputs are adopted by the composite through `existing`, like any object owned elsewhere.
 
 ## How it works
 
-Three layers. The **building blocks** handle one concern each and can be used alone; the **tenant composite** describes a whole tenant in one model and calls them; **cloud-baseline** (planned) will handle what needs the admin role:
+Three layers. The **building blocks** handle one concern each and can be used alone; the **tenant composite** describes a whole tenant in one model and calls them; the admin-level foundation, in a separate repository, handles what needs the admin role:
 
 ```mermaid
 flowchart LR
     subgraph admin["Cloud administrator · admin role"]
-        B["modules/cloud-baseline (planned v0.2)<br/>projects · quotas · users · roles<br/>flavors · images · shared networks<br/>SG catalog · DNS zones"]
+        B["terraform-openstack-cloud-baseline<br/>(separate repository)<br/>projects · quotas · users · roles<br/>flavors · images · shared networks<br/>SG catalog · DNS zones"]
     end
     subgraph tenant["Tenant operator · member role on the project"]
         T["tenant composite (root)<br/>one model per tenant"]
@@ -201,7 +201,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | v0.1.4 | Routers joining other networks through interfaces, static routes, routers without a gateway; no change for existing configurations | released 2026-11-03 |
 | v0.1.5 | The port of a router interface is replaced with its router; no change for existing configurations | released 2026-11-09 |
 | v0.1.x | Integration results on a public OpenStack cloud and the fixes they reveal | waiting for network quotas on the public test project |
-| **v0.2.0** | `modules/cloud-baseline` (admin role), with adoption of existing projects, users and shared objects, tested on DevStack | planned |
+| — | `cloud-baseline` (admin role) moved to its own repository, `terraform-openstack-cloud-baseline`, with its own versions | in development |
 
 ## Documentation
 
