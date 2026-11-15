@@ -38,7 +38,7 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 
 - **Teams consuming an OpenStack cloud without admin rights**, notably public and sovereign European clouds: one model per project, no admin role, no assumption on the deployment tool or vendor of the cloud.
 - **Platform teams** that build several tenants on one cloud and need stable outputs to chain configuration tools, Kubernetes or inventories.
-- **Operators of private clouds**, later: projects, quotas, users and shared objects belong to the admin-level foundation, developed in a separate repository, `terraform-openstack-cloud-baseline`.
+- **Operators of private clouds**: projects, quotas, users and shared objects belong to the admin-level foundation, in a separate repository, [terraform-openstack-cloud-baseline](https://github.com/CyprisTech/terraform-openstack-cloud-baseline).
 
 ## What it demonstrates
 
@@ -66,7 +66,7 @@ OpenTofu and Terraform modules that describe an **OpenStack tenant in a single d
 | **Bootstrap** | `modules/cloudinit`: users, packages, files; data disks formatted only when empty and mounted by label at every boot |
 | **Composition** | Building blocks usable alone; provider-neutral outputs for upper layers |
 
-**Admin level, in a separate repository:** projects and quotas, users, groups and role assignments, flavors, images, provider and shared networks, a shared security group catalog, DNS zones created for or shared with tenants belong to `terraform-openstack-cloud-baseline`, developed from the model of [ADR-0001 § D4](docs/adr/0001-module-design.md#d4-cloud-baseline-input-model). Its outputs are adopted by the composite through `existing`, like any object owned elsewhere.
+**Admin level, in a separate repository:** projects and quotas, users, groups and role assignments, flavors, images, provider and shared networks, a shared security group catalog, DNS zones created for or shared with tenants belong to [terraform-openstack-cloud-baseline](https://github.com/CyprisTech/terraform-openstack-cloud-baseline), developed from the model of [ADR-0001 § D4](docs/adr/0001-module-design.md#d4-cloud-baseline-input-model). Its outputs are adopted by the composite through `existing`, like any object owned elsewhere.
 
 ## How it works
 
@@ -201,7 +201,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | v0.1.4 | Routers joining other networks through interfaces, static routes, routers without a gateway; no change for existing configurations | released 2026-11-03 |
 | v0.1.5 | The port of a router interface is replaced with its router; no change for existing configurations | released 2026-11-09 |
 | v0.1.x | Integration results on a public OpenStack cloud and the fixes they reveal | waiting for network quotas on the public test project |
-| — | `cloud-baseline` (admin role) moved to its own repository, `terraform-openstack-cloud-baseline`, with its own versions | in development |
+| — | `cloud-baseline` (admin role) moved to its own repository, [terraform-openstack-cloud-baseline](https://github.com/CyprisTech/terraform-openstack-cloud-baseline), with its own versions | released separately |
 
 ## Documentation
 
