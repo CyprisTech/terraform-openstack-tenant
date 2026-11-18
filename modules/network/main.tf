@@ -110,9 +110,10 @@ resource "openstack_networking_router_route_v2" "this" {
 
   router_id        = openstack_networking_router_v2.this[each.value.router].id
   destination_cidr = each.value.destination
-  next_hop         = each.value.next_hop
+  next_hop         = each.value.next_hop_router == null ? each.value.next_hop : openstack_networking_port_v2.router[each.value.next_hop_router].all_fixed_ips[0]
 
-  # The next hop must be on a subnet the router is attached to.
+  # The next hop must be on a subnet the router is attached to: the other router
+  # must be attached there before its address can be routed to.
   depends_on = [openstack_networking_router_interface_v2.this, openstack_networking_router_interface_v2.interface]
 }
 

@@ -89,11 +89,13 @@ Map key: network name (unless `name` is set).
 | `admin_state_up` | bool | `true` | |
 | `availability_zone_hints` | list(string) | `[]` | |
 | `interfaces` | map | `{}` | Interfaces on other networks, keyed by label: `network` (key in `existing.networks`), `subnet` (key of a subnet of that network), `ip` (fixed address; requires `subnet`) |
-| `routes` | list(object) | `[]` | Static routes of the router (Neutron extra routes): `destination` (CIDR), `next_hop` (address on a subnet the router is attached to) |
+| `routes` | list(object) | `[]` | Static routes of the router (Neutron extra routes): `destination` (CIDR), and either `next_hop` (address on a subnet the router is attached to) or `next_hop_router` (key of another router of the same network on the same internal subnet; its address there, allocated by Neutron, is the next hop) |
 
 **Interfaces and routes.** An interface on a shared private network gives the tenant a path to that network without address translation: the target sees the instance's real address. The return path then needs routes: on this router towards the ranges reached through the interface, and on the routers of the other side towards this tenant's range. The routers output (`interfaces.<label>.ip`) gives the addresses to use as next hops.
 
 **Default gateway.** Instances use the subnet's gateway address as default route. When no router of a subnet sets `internal_ip` or `default_gateway`, the **first router of that subnet in key order** takes the gateway address; the others get an allocated address and are reached through `advertise_routes`. Set `default_gateway = true` on another router to choose it, or manage every address with `internal_ip`.
+
+**Routes between routers of a subnet.** Host routes pushed by DHCP are read at boot and at each lease renewal, and Octavia load balancers (amphora provider) copy them once, when their VIP is plugged: a route added or changed later never reaches an existing load balancer. To route to other routers without host routes, give the subnet one default gateway and put the routes on it, with `next_hop_router` naming the router to reach: a route change then applies at once, for every source on the subnet.
 
 ## `security_groups`
 
