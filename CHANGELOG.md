@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-18
+
+No change for existing configurations.
+
 ### Added
 
 - Guide [taking over existing objects](docs/takeover.md): adoption versus takeover, the `import` address of every object, what changes in place and what is replaced. An instance is replaced on takeover: the provider does not record the port of an imported instance.
@@ -120,7 +124,8 @@ First release: the tenant layers (building blocks, composite, output contract), 
 - `management_port` and `instances.*.management_port` / `management_egress`: a site convention rather than a general feature. A second port is declared in `ports`; see `examples/adopt-existing` for adding the same port to every instance.
 - The pre-redesign code; it remains available in the history.
 
-[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/CyprisTech/terraform-openstack-tenant/compare/v0.1.2...v0.1.3

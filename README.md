@@ -200,6 +200,7 @@ State storage, state encryption, locking, the origin of secrets and the delivery
 | v0.1.3 | Documentation: delivered and planned features apart, output contract and floating IP ADRs, real-cloud pitfalls, examples; no interface change | released 2026-10-28 |
 | v0.1.4 | Routers joining other networks through interfaces, static routes, routers without a gateway; no change for existing configurations | released 2026-11-03 |
 | v0.1.5 | The port of a router interface is replaced with its router; no change for existing configurations | released 2026-11-09 |
+| v0.1.6 | Router routes with a next hop named by router (`next_hop_router`); takeover guide, at scale included; no change for existing configurations | released 2026-11-18 |
 | v0.1.x | Integration results on a public OpenStack cloud and the fixes they reveal | waiting for network quotas on the public test project |
 | — | `cloud-baseline` (admin role) moved to its own repository, [terraform-openstack-cloud-baseline](https://github.com/CyprisTech/terraform-openstack-cloud-baseline), with its own versions | released separately |
 
