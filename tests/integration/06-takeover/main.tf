@@ -5,6 +5,16 @@
 # Checks: the plan imports every object and creates or destroys nothing; the plan after apply
 # is empty; destroy removes everything.
 
+variable "web_rules" {
+  description = "Rules of the group it06-web, generated from the API by takeover.sh: key => ID and attributes."
+  type = map(object({
+    id               = string
+    protocol         = string
+    port             = number
+    remote_ip_prefix = string
+  }))
+}
+
 variable "ids" {
   description = "IDs of the objects to take over, written by takeover.sh."
   type        = map(string)
@@ -26,6 +36,12 @@ module "tenant" {
     }
 
     security_groups = {
+      # Described from the generated list: one rule per entry, keyed like the import below.
+      it06-web = {
+        rules = { for k, r in var.web_rules : k => {
+          direction = "ingress", protocol = r.protocol, port_min = r.port, port_max = r.port, remote_ip_prefix = r.remote_ip_prefix
+        } }
+      }
       it06-ssh = {
         rules = { ssh = { direction = "ingress", protocol = "tcp", port_min = 22, port_max = 22, remote_ip_prefix = "0.0.0.0/0" } }
       }
@@ -105,4 +121,16 @@ import {
 import {
   to = module.tenant.module.instance["it06-vm"].openstack_networking_floatingip_associate_v2.this["main"]
   id = var.ids.floating_ip
+}
+
+# At scale: one import block for every rule of the generated list.
+import {
+  to = module.tenant.module.security_group["it06-web"].openstack_networking_secgroup_v2.this
+  id = var.ids.web_group
+}
+
+import {
+  for_each = var.web_rules
+  to       = module.tenant.module.security_group["it06-web"].openstack_networking_secgroup_rule_v2.this[each.key]
+  id       = each.value.id
 }

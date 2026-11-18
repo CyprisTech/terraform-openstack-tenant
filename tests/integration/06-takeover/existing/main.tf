@@ -45,6 +45,23 @@ resource "openstack_networking_secgroup_rule_v2" "ssh" {
   remote_ip_prefix  = "0.0.0.0/0"
 }
 
+# A group with several rules, taken over from a list generated from the API (takeover.sh).
+resource "openstack_networking_secgroup_v2" "web" {
+  name        = "it06-web"
+  description = ""
+}
+
+resource "openstack_networking_secgroup_rule_v2" "web" {
+  for_each          = toset(["80", "443", "8443"])
+  security_group_id = openstack_networking_secgroup_v2.web.id
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    = tonumber(each.key)
+  port_range_max    = tonumber(each.key)
+  remote_ip_prefix  = "0.0.0.0/0"
+}
+
 # As `openstack port create` then `openstack server create --port`. An instance attached by
 # network (Nova creates the port) cannot be taken over without being replaced: the provider does
 # not record the port of an imported instance (docs/takeover.md).
@@ -92,6 +109,7 @@ output "ids" {
     router_port      = openstack_networking_router_interface_v2.out.port_id
     security_group   = openstack_networking_secgroup_v2.ssh.id
     ssh_rule         = openstack_networking_secgroup_rule_v2.ssh.id
+    web_group        = openstack_networking_secgroup_v2.web.id
     instance         = openstack_compute_instance_v2.vm.id
     instance_port    = openstack_networking_port_v2.vm.id
     floating_ip      = openstack_networking_floatingip_v2.vm.id

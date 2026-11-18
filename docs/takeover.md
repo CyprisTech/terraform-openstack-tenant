@@ -50,6 +50,35 @@ Adopt what belongs to someone else (the cloud operator, another stack); take ove
 | Instance attached by network (`openstack server create --network`) | Nova created the port; it can be imported like any port | Import it as the instance port, with its current `fixed_ip` |
 | Floating IP | Its description becomes `<instance>-<port>` | Expected, in place |
 
+## At scale
+
+Thousands of objects are not written by hand, one `import` block each:
+
+1. **One stack per project**, taken over one after the other: states stay small and a mistake stays in one project.
+2. **Generate the inventory from the API**: list the objects (`openstack ... list -f json`) and turn the list into the model, keyed by name, and into the IDs to import, keyed the same way.
+3. **One `import` block per kind of object**, with `for_each` over the generated list (OpenTofu and Terraform 1.7 and later):
+
+   ```hcl
+   import {
+     for_each = var.web_rules # generated: "<protocol>-<port>" => { id, protocol, port, remote_ip_prefix }
+     to       = module.tenant.module.security_group["web"].openstack_networking_secgroup_rule_v2.this[each.key]
+     id       = each.value.id
+   }
+   ```
+
+   The model takes its rules from the same list, so both stay in step:
+
+   ```hcl
+   security_groups = {
+     web = {
+       rules = { for k, r in var.web_rules : k => {
+         direction = "ingress", protocol = r.protocol, port_min = r.port, port_max = r.port, remote_ip_prefix = r.remote_ip_prefix
+       } }
+     }
+   }
+   ```
+4. **Read the plan** as above: every object imported, nothing created or destroyed but the instances. A mismatch is corrected in the generator, not in the cloud.
+
 ## Tested
 
-Stage [`06-takeover`](../tests/integration/README.md) creates these objects as the CLI would (a router attached by subnet, a port, an instance on it, a floating IP), forgets them, takes them over with the module, checks that the plan after apply is empty, then destroys everything.
+Stage [`06-takeover`](../tests/integration/README.md) creates these objects as the CLI would (a router attached by subnet, a port, an instance on it, a floating IP, a group of several rules), forgets them, takes them over with the module (the rules of the group from a list generated from the API, with one `import` block and `for_each`), checks that the plan after apply is empty, then destroys everything.
