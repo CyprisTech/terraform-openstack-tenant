@@ -48,7 +48,11 @@ variable "tenant" {
           subnet  = optional(string) # key of a subnet of that network in existing.networks
           ip      = optional(string)
         })), {})
-        routes = optional(list(object({ destination = string, next_hop = string })), [])
+        routes = optional(list(object({
+          destination     = string
+          next_hop        = optional(string)
+          next_hop_router = optional(string) # key of another router of this network, same internal subnet
+        })), [])
       })), {})
     })), {})
 

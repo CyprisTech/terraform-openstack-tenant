@@ -77,8 +77,10 @@ variable "routers" {
     - advertise_routes: destinations pushed to the internal subnet as host routes via this router.
     - interfaces: interfaces on other networks, keyed by label: network_id, and optionally
       subnet_id and ip_address (fixed address on that subnet).
-    - routes: static routes of the router (Neutron extra routes): destination and next_hop. The
-      next hop must be on a subnet the router is attached to.
+    - routes: static routes of the router (Neutron extra routes): destination, and either
+      next_hop (an address on a subnet the router is attached to) or next_hop_router (the key
+      of another router of this network on the same internal subnet: its address there,
+      allocated by Neutron, is the next hop).
   EOT
   type = map(object({
     external_network_id     = optional(string)
@@ -95,7 +97,11 @@ variable "routers" {
       subnet_id  = optional(string)
       ip_address = optional(string)
     })), {})
-    routes = optional(list(object({ destination = string, next_hop = string })), [])
+    routes = optional(list(object({
+      destination     = string
+      next_hop        = optional(string)
+      next_hop_router = optional(string)
+    })), [])
   }))
   default = {}
 
@@ -134,9 +140,24 @@ variable "routers" {
 
   validation {
     condition = alltrue(flatten([for r in values(var.routers) : [
-      for rt in r.routes : can(cidrhost(rt.destination, 0)) && can(cidrhost("${rt.next_hop}/${strcontains(rt.next_hop, ":") ? 128 : 32}", 0))
+      for rt in r.routes : can(cidrhost(rt.destination, 0)) && (rt.next_hop == null || can(cidrhost("${rt.next_hop}/${strcontains(rt.next_hop, ":") ? 128 : 32}", 0)))
     ]]))
-    error_message = "Each router route needs a destination in CIDR notation and a next_hop address."
+    error_message = "Each router route needs a destination in CIDR notation, and next_hop, when set, must be an address."
+  }
+
+  validation {
+    condition     = alltrue(flatten([for r in values(var.routers) : [for rt in r.routes : (rt.next_hop == null) != (rt.next_hop_router == null)]]))
+    error_message = "Each router route takes exactly one of next_hop and next_hop_router."
+  }
+
+  validation {
+    condition = alltrue(flatten([for rk, r in var.routers : [
+      for rt in r.routes : rt.next_hop_router == null || (
+        contains(keys(var.routers), coalesce(rt.next_hop_router, "-")) && rt.next_hop_router != rk &&
+        try(var.routers[rt.next_hop_router].internal_subnet == r.internal_subnet, false)
+      )
+    ]]))
+    error_message = "A route next_hop_router must be another router of this network attached to the same internal subnet."
   }
 
   validation {

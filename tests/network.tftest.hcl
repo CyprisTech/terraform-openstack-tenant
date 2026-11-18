@@ -262,3 +262,96 @@ run "rejects_duplicate_route_destination" {
 
   expect_failures = [var.routers]
 }
+
+run "route_to_another_router" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = {
+      transit     = { internal_subnet = "main", default_gateway = true, routes = [{ destination = "172.31.0.0/24", next_hop_router = "publication" }, { destination = "0.0.0.0/0", next_hop_router = "egress" }] }
+      publication = { external_network_id = "ext-publication", internal_subnet = "main" }
+      egress      = { external_network_id = "ext-public", internal_subnet = "main" }
+    }
+  }
+
+  assert {
+    condition     = toset(keys(openstack_networking_router_route_v2.this)) == toset(["transit/172.31.0.0/24", "transit/0.0.0.0/0"])
+    error_message = "Routes naming a router are keyed by router and destination, known at plan time."
+  }
+
+  assert {
+    condition     = length(openstack_networking_subnet_route_v2.this) == 0
+    error_message = "Routes on the gateway router push no host route to the subnet."
+  }
+}
+
+run "rejects_route_with_both_next_hops" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = {
+      r = { internal_subnet = "main", routes = [{ destination = "10.20.0.0/24", next_hop = "10.21.0.9", next_hop_router = "s" }] }
+      s = { internal_subnet = "main" }
+    }
+  }
+
+  expect_failures = [var.routers]
+}
+
+run "rejects_route_without_next_hop" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = { r = { internal_subnet = "main", routes = [{ destination = "10.20.0.0/24" }] } }
+  }
+
+  expect_failures = [var.routers]
+}
+
+run "rejects_next_hop_router_on_another_subnet" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" }, other = { cidr = "10.22.0.0/24" } }
+    routers = {
+      r = { internal_subnet = "main", routes = [{ destination = "10.20.0.0/24", next_hop_router = "s" }] }
+      s = { internal_subnet = "other" }
+    }
+  }
+
+  expect_failures = [var.routers]
+}
+
+run "rejects_unknown_or_self_next_hop_router" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    subnets = { main = { cidr = "10.21.0.0/24" } }
+    routers = { r = { internal_subnet = "main", routes = [{ destination = "10.20.0.0/24", next_hop_router = "r" }, { destination = "10.30.0.0/24", next_hop_router = "nope" }] } }
+  }
+
+  expect_failures = [var.routers]
+}

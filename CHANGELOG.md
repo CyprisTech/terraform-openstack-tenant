@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Guide [taking over existing objects](docs/takeover.md): adoption versus takeover, the `import` address of every object, what changes in place and what is replaced. An instance is replaced on takeover: the provider does not record the port of an imported instance.
 - Integration stage `06-takeover`: objects created as with the CLI, then taken over by the module with `import` blocks.
+- Router routes may name their next hop by router: `next_hop_router`, the key of another router of the same network on the same internal subnet, whose address allocated by Neutron becomes the next hop. With it, the routes to the other routers of a subnet can live on its default gateway instead of host routes, which Octavia load balancers copy once and never read again ([tenant model](docs/tenant-model.md#networks)).
 
 ### Changed
 
