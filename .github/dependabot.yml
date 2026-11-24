@@ -4,6 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # The CodeQL actions (init, analyze, upload-sarif) must move together.
+    groups:
+      codeql:
+        patterns: ["github/codeql-action*"]
   - package-ecosystem: terraform
     directory: /
     schedule:
